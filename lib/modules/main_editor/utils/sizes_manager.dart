@@ -93,7 +93,7 @@ class SizesManager {
   Size bodySize = Size.zero;
 
   /// Stores the last recorded editor size.
-  Size editorSize = Size.zero;
+  // Size editorSize = Size.zero;
 
   /// Recalculates the position and scale of layers based on the temporary decoded image size.
   void recalculateLayerPosition({

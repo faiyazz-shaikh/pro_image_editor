@@ -93,7 +93,8 @@ class _LayerInteractionHelperWidgetState
                 tooltip: i18n.layerInteraction.remove,
               ),
             ),
-            if (widget.layerData.runtimeType == TextLayerData)
+            if (widget.layerData.runtimeType == TextLayerData ||
+                widget.layerData.runtimeType == QuillDataLayer)
               Positioned(
                 top: 0,
                 right: 0,

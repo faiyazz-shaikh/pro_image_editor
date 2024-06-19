@@ -138,6 +138,9 @@ class CustomWidgetsMainEditor {
     Stream rebuildStream,
   )? bodyItems;
 
+  /// Define horizontal padding of editor, which will subtract from editor width
+  final int editorHorizontalPadding;
+
   const CustomWidgetsMainEditor({
     this.closeWarningDialog,
     this.removeLayerArea,
@@ -145,5 +148,6 @@ class CustomWidgetsMainEditor {
     this.appBar,
     this.bottomBar,
     this.bodyItems,
+    this.editorHorizontalPadding = 0,
   });
 }
