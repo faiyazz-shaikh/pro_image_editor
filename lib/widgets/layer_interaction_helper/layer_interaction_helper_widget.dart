@@ -49,6 +49,7 @@ class LayerInteractionHelperWidget extends StatefulWidget
     required this.configs,
     this.onEditLayer,
     this.onRemoveLayer,
+    this.onDuplicateLayer,
     this.onScaleRotateDown,
     this.onScaleRotateUp,
     this.selected = false,
@@ -87,6 +88,9 @@ class LayerInteractionHelperWidget extends StatefulWidget
   /// This callback is triggered when the user selects the remove option for a
   /// layer, enabling the removal of the layer from the editor.
   final Function()? onRemoveLayer;
+
+  /// Duplicates the layer
+  final Function()? onDuplicateLayer;
 
   /// Callback for handling pointer down events associated with scale and
   /// rotate gestures.
@@ -183,7 +187,8 @@ class _LayerInteractionHelperWidgetState
             if (widget.layerData.runtimeType == TextLayerData ||
                 (widget.layerData.runtimeType == StickerLayerData &&
                     widget.callbacks.stickerEditorCallbacks?.onTapEditSticker !=
-                        null))
+                        null) ||
+                widget.layerData.runtimeType == QuillDataLayer)
               Positioned(
                 top: 0,
                 right: 0,
@@ -217,6 +222,23 @@ class _LayerInteractionHelperWidgetState
                 color: imageEditorTheme.layerInteraction.buttonScaleRotateColor,
                 background: imageEditorTheme
                     .layerInteraction.buttonScaleRotateBackground,
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              child: LayerInteractionButton(
+                toggleTooltipVisibility: (val) =>
+                    setState(() => _tooltipVisible = val),
+                rotation: -widget.layerData.rotation,
+                onTap: widget.onDuplicateLayer,
+                buttonRadius: imageEditorTheme.layerInteraction.buttonRadius,
+                cursor: imageEditorTheme.layerInteraction.duplicateCursor,
+                icon: icons.layerInteraction.duplicate,
+                tooltip: i18n.layerInteraction.duplicate,
+                color: imageEditorTheme.layerInteraction.buttonDuplicateColor,
+                background:
+                    imageEditorTheme.layerInteraction.buttonDuplicateBackground,
               ),
             ),
           ],

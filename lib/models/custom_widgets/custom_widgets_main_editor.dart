@@ -34,6 +34,11 @@ class CustomWidgetsMainEditor {
     this.appBar,
     this.bottomBar,
     this.bodyItems,
+    this.editorHorizontalPadding = 0,
+    this.appBarHeight = 0,
+    this.bottomBarHeight = 0,
+    this.bodySize = Size.zero,
+    this.aspectRatio = 9 / 16,
   });
 
   /// Override the close warning dialog when we made changes.
@@ -175,4 +180,19 @@ class CustomWidgetsMainEditor {
     ProImageEditorState editor,
     Stream<void> rebuildStream,
   )? bodyItems;
+
+  /// Define horizontal padding of editor, which will subtract from editor width
+  final int editorHorizontalPadding;
+
+  /// App bar height
+  final int appBarHeight;
+
+  /// Bottom bar height
+  final int bottomBarHeight;
+
+  /// body size
+  final Size bodySize;
+
+  /// aspect ratio
+  final double aspectRatio;
 }

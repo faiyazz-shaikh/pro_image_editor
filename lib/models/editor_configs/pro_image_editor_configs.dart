@@ -1,5 +1,6 @@
 // Flutter imports:
 import 'package:flutter/material.dart';
+import 'package:pro_image_editor/models/layer/layer.dart';
 
 // Project imports:
 import '../../utils/design_mode.dart';
@@ -105,6 +106,8 @@ class ProImageEditorConfigs {
     this.emojiEditorConfigs = const EmojiEditorConfigs(),
     this.stickerEditorConfigs,
     this.designMode = ImageEditorDesignModeE.material,
+    this.quillWidget,
+    this.isLayerInteractive = true,
   });
 
   /// The theme to be used for the Image Editor.
@@ -163,4 +166,10 @@ class ProImageEditorConfigs {
 
   /// Holds the configurations related to image generation.
   final ImageGenerationConfigs imageGenerationConfigs;
+
+  /// Quill widget
+  final Widget Function(QuillDataLayer)? quillWidget;
+
+  /// set layer interactive
+  final bool isLayerInteractive;
 }

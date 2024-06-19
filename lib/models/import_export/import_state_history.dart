@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 // Flutter imports:
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 // Project imports:
@@ -33,6 +34,7 @@ class ImportStateHistory {
     required this.stateHistory,
     required this.configs,
     required this.version,
+    this.imageBytes,
   });
 
   /// Creates an [ImportStateHistory] instance from a map representation.
@@ -101,6 +103,14 @@ class ImportStateHistory {
       );
     }
 
+    Uint8List? imageBytes;
+
+    try {
+      imageBytes = base64Decode(map['jd_background']);
+    } catch (error) {
+      // debugPrint(error);
+    }
+
     return ImportStateHistory._(
       editorPosition: map['position'],
       imgSize:
@@ -108,6 +118,7 @@ class ImportStateHistory {
       stateHistory: stateHistory,
       configs: configs,
       version: version,
+      imageBytes: imageBytes,
     );
   }
 
@@ -133,4 +144,7 @@ class ImportStateHistory {
 
   /// Version from import/export history for backward compatibility.
   final String version;
+
+  /// image bytes
+  final Uint8List? imageBytes;
 }

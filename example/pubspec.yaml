@@ -36,5 +36,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/demo.png
+    - assets/
     - assets/google_fonts/
