@@ -43,6 +43,8 @@ class ExportEditorConfigs {
   /// Warning: Exporting stickers may result in increased file size.
   final bool exportSticker;
 
+  final bool exportQuilDocument;
+
   const ExportEditorConfigs({
     this.historySpan = ExportHistorySpan.all,
     this.exportPainting = true,
@@ -51,5 +53,6 @@ class ExportEditorConfigs {
     this.exportFilter = true,
     this.exportEmoji = true,
     this.exportSticker = true,
+    this.exportQuilDocument = true,
   });
 }

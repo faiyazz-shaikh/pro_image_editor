@@ -1,22 +1,20 @@
 // Dart imports:
+import 'dart:convert';
 import 'dart:math';
 
 // Flutter imports:
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:pro_image_editor/pro_image_editor.dart';
 
 // Package imports:
 import 'package:rounded_background_text/rounded_background_text.dart';
 
 // Project imports:
-import 'package:pro_image_editor/models/editor_callbacks/pro_image_editor_callbacks.dart';
-import 'package:pro_image_editor/models/editor_configs/pro_image_editor_configs.dart';
 import 'package:pro_image_editor/utils/theme_functions.dart';
 import '../mixins/converted_configs.dart';
 import '../mixins/editor_configs_mixin.dart';
-import '../models/layer/layer.dart';
-import '../modules/paint_editor/utils/paint_editor_enum.dart';
-import '../modules/paint_editor/widgets/draw_painting.dart';
 import 'layer_interaction_helper/layer_interaction_helper_widget.dart';
 
 /// A widget representing a layer within a design canvas.
@@ -113,6 +111,9 @@ class _LayerWidgetState extends State<LayerWidget>
         break;
       case const (PaintingLayerData):
         _layerType = _LayerType.canvas;
+        break;
+      case const (QuillDataLayer):
+        _layerType = _LayerType.document;
         break;
       default:
         _layerType = _LayerType.unknown;
@@ -291,6 +292,8 @@ class _LayerWidgetState extends State<LayerWidget>
         return _buildSticker();
       case _LayerType.canvas:
         return _buildCanvas();
+      case _LayerType.document:
+        return _buildQuilDocumentLayer();
       default:
         return const SizedBox.shrink();
     }
@@ -306,6 +309,45 @@ class _LayerWidgetState extends State<LayerWidget>
 
     painter.layout();
     return painter.preferredLineHeight;
+  }
+
+  Widget _buildQuilDocumentLayer() {
+    var layer = _layer as QuillDataLayer;
+
+    final data = layer.document;
+    final json = jsonDecode(data);
+
+    debugPrint('height : ${layer.initHeight}');
+    debugPrint('width : ${layer.initWidth}');
+    debugPrint('scale: ${_layer.scale}');
+
+    final QuillController controller = QuillController(
+      document: Document.fromJson(json),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+
+    return AbsorbPointer(
+      child: SizeTransition(
+        sizeFactor: AlwaysStoppedAnimation<double>(_layer.scale),
+        child: SizedBox(
+          height: (layer.initHeight ?? 0),
+          width: (layer.initWidth ?? 0) * _layer.scale,
+          child: FittedBox(
+            fit: BoxFit.fitWidth,
+            child: IntrinsicWidth(
+              // height: (layer.initHeight ?? 0),
+              // width: (layer.initWidth ?? 0),
+              child: QuillEditor.basic(
+                configurations: QuillEditorConfigurations(
+                  controller: controller,
+                  scrollable: false,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// Build the text widget
@@ -399,4 +441,4 @@ class _LayerWidgetState extends State<LayerWidget>
 }
 
 // ignore: camel_case_types
-enum _LayerType { emoji, text, sticker, canvas, unknown }
+enum _LayerType { emoji, text, sticker, canvas, unknown, document }

@@ -23,6 +23,8 @@ class LayerCopyManager {
       return createCopyPaintingLayer(layer);
     } else if (layer is StickerLayerData) {
       return createCopyStickerLayer(layer);
+    } else if (layer is QuillDataLayer) {
+      return createCopyQuillDataLayer(layer);
     } else {
       return layer;
     }
@@ -90,6 +92,20 @@ class LayerCopyManager {
       flipY: layer.flipY,
       item: layer.item.copy(),
       rawSize: layer.rawSize,
+    );
+  }
+
+  QuillDataLayer createCopyQuillDataLayer(QuillDataLayer layer) {
+    return QuillDataLayer(
+      id: layer.id,
+      document: layer.document,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
     );
   }
 }

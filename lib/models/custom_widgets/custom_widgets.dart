@@ -40,6 +40,10 @@ class ImageEditorCustomWidgets {
   /// Replace the existing loading dialog.
   final Widget? loadingDialog;
 
+  final Widget? bottomNavigation;
+
+  final PreferredSizeWidget? appBar;
+
   /// Creates an instance of the `CustomWidgets` class with the specified properties.
   const ImageEditorCustomWidgets({
     this.loadingDialog,
@@ -49,5 +53,7 @@ class ImageEditorCustomWidgets {
     this.cropRotateEditor = const CustomWidgetsCropRotateEditor(),
     this.filterEditor = const CustomWidgetsFilterEditor(),
     this.blurEditor = const CustomWidgetsBlurEditor(),
+    this.bottomNavigation,
+    this.appBar,
   });
 }

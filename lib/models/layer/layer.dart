@@ -131,6 +131,19 @@ class Layer {
           scale: layer.scale,
           sticker: sticker,
         );
+
+      case 'quillDocument':
+        return QuillDataLayer(
+          flipX: layer.flipX,
+          flipY: layer.flipY,
+          offset: layer.offset,
+          rotation: layer.rotation,
+          scale: layer.scale,
+          document: map['document'],
+          initHeight: map['initHeight'],
+          initWidth: map['initWidth'],
+        );
+
       default:
         return layer;
     }
@@ -363,6 +376,35 @@ class StickerLayerData extends Layer {
       ...toMap(),
       'listPosition': listPosition,
       'type': 'sticker',
+    };
+  }
+}
+
+class QuillDataLayer extends Layer {
+  String document;
+  double? initHeight;
+  double? initWidth;
+
+  QuillDataLayer({
+    required this.document,
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  @override
+  Map toMap() {
+    return {
+      ...super.toMap(),
+      'document': document,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'type': 'quillDocument',
     };
   }
 }

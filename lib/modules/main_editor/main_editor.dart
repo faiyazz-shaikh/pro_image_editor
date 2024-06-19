@@ -611,7 +611,7 @@ class ProImageEditorState extends State<ProImageEditor>
     layerInteractionManager.selectedLayerId = '';
     _controllers.uiLayerCtrl.add(null);
 
-    /* 
+    /*
     String selectedLayerId = _layerInteractionManager.selectedLayerId;
     _layerInteractionManager.selectedLayerId = '';
     setState(() {});
@@ -659,8 +659,8 @@ class ProImageEditorState extends State<ProImageEditor>
       ),
       configs: transformConfigs ?? stateManager.transformConfigs,
     );
-    sizesManager.originalImageSize ??= _imageInfos!.rawSize;
-    sizesManager.decodedImageSize = _imageInfos!.renderedSize;
+    sizesManager.originalImageSize ??= sizesManager.bodySize;
+    sizesManager.decodedImageSize = sizesManager.bodySize;
 
     _inited = true;
     if (!_decodeImageCompleter.isCompleted) {
@@ -683,23 +683,26 @@ class ProImageEditorState extends State<ProImageEditor>
   }
 
   void _calcAppBarHeight() {
-    double? renderedBottomBarHeight =
-        _bottomBarKey.currentContext?.size?.height;
-    if (renderedBottomBarHeight != null) {
-      sizesManager.bottomBarHeight = renderedBottomBarHeight;
-      sizesManager.appBarHeight = sizesManager.editorSize.height -
-          sizesManager.bodySize.height -
-          sizesManager.bottomBarHeight;
-    }
+    sizesManager.bottomBarHeight = 0;
+    sizesManager.appBarHeight = 0;
+    // double? renderedBottomBarHeight =
+    //     _bottomBarKey.currentContext?.size?.height;
+    // if (renderedBottomBarHeight != null) {
+    //   sizesManager.bottomBarHeight = renderedBottomBarHeight;
+    //   sizesManager.appBarHeight = sizesManager.editorSize.height -
+    //       sizesManager.bodySize.height -
+    //       sizesManager.bottomBarHeight;
+    // }
   }
 
   /// Handle the start of a scaling operation.
   ///
   /// This method is called when a scaling operation begins and initializes the necessary variables.
   void _onScaleStart(ScaleStartDetails details) {
-    if (sizesManager.bodySize != sizesManager.editorSize) {
-      _calcAppBarHeight();
-    }
+    _calcAppBarHeight();
+    // if (sizesManager.bodySize != sizesManager.editorSize) {
+    //   _calcAppBarHeight();
+    // }
 
     layerInteractionManager.snapStartPosX = details.focalPoint.dx;
     layerInteractionManager.snapStartPosY = details.focalPoint.dy;
@@ -777,7 +780,7 @@ class ProImageEditorState extends State<ProImageEditor>
         details: details,
         editorSize: Size(
           sizesManager.bodySize.width,
-          sizesManager.editorSize.height +
+          sizesManager.bodySize.height +
               sizesManager.appBarHeight -
               sizesManager.bottomBarHeight,
         ),
@@ -806,7 +809,7 @@ class ProImageEditorState extends State<ProImageEditor>
       layerInteractionManager.calculateScaleRotate(
         activeLayer: _activeLayer!,
         detail: details,
-        editorSize: sizesManager.editorSize,
+        editorSize: sizesManager.bodySize,
         screenPaddingHelper: sizesManager.imageMargin,
         configEnabledHitVibration: helperLines.hitVibration,
       );
@@ -886,6 +889,34 @@ class ProImageEditorState extends State<ProImageEditor>
   /// Removes the key event listener by removing the handler from the keyboard service.
   void removeKeyEventListener() {
     ServicesBinding.instance.keyboard.removeHandler(_onKeyEvent);
+  }
+
+  Future<void> _onQuillDocumentTap(QuillDataLayer layerData) async {
+    QuillDataLayer? layer =
+        await widget.callbacks.onQuillEditorTap?.call(layerData);
+
+    if (layer == null || !mounted) return;
+
+    int i = activeLayers.indexWhere((element) => element.id == layerData.id);
+    if (i >= 0) {
+      _setTempLayer(layerData);
+      QuillDataLayer quillDataLayer = activeLayers[i] as QuillDataLayer;
+      quillDataLayer
+        ..document = layer.document
+        ..id = layerData.id
+        ..flipX = layerData.flipX
+        ..flipY = layerData.flipY
+        ..offset = layerData.offset
+        ..scale = layerData.scale
+        ..rotation = layerData.rotation
+        ..initWidth = layerData.initWidth
+        ..initHeight = layerData.initHeight;
+
+      _updateTempLayer();
+    }
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
   }
 
   void _selectLayerAfterHeroIsDone(String id) {
@@ -1075,6 +1106,18 @@ class ProImageEditorState extends State<ProImageEditor>
       ),
       duration: duration,
     );
+
+    if (layer == null || !mounted) return;
+
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  void openQuillEditor() async {
+    QuillDataLayer? layer = await widget.callbacks.onQuillEditorTap?.call(null);
 
     if (layer == null || !mounted) return;
 
@@ -1688,6 +1731,13 @@ class ProImageEditorState extends State<ProImageEditor>
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width -
+        customWidgets.mainEditor.editorHorizontalPadding;
+    // double height = MediaQuery.of(context).size.height;
+    double height = 0;
+    height = (16 * width) / 9;
+    sizesManager.bodySize = Size(width, height);
+
     _theme = configs.theme ??
         ThemeData(
           useMaterial3: true,
@@ -1732,7 +1782,7 @@ class ProImageEditorState extends State<ProImageEditor>
               data: _theme,
               child: SafeArea(
                 child: LayoutBuilder(builder: (context, constraints) {
-                  sizesManager.editorSize = constraints.biggest;
+                  // sizesManager.editorSize = constraints.biggest;
                   return Scaffold(
                     backgroundColor: imageEditorTheme.background,
                     resizeToAvoidBottomInset: false,
@@ -1755,59 +1805,57 @@ class ProImageEditorState extends State<ProImageEditor>
           .call(this, _rebuildController.stream);
     }
 
-    return selectedLayerIndex >= 0
-        ? null
-        : AppBar(
-            automaticallyImplyLeading: false,
-            foregroundColor: imageEditorTheme.appBarForegroundColor,
-            backgroundColor: imageEditorTheme.appBarBackgroundColor,
-            actions: [
-              IconButton(
-                tooltip: i18n.cancel,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                icon: Icon(icons.closeEditor),
-                onPressed: closeEditor,
-              ),
-              const Spacer(),
-              IconButton(
-                key: const ValueKey('MainEditorMainUndoButton'),
-                tooltip: i18n.undo,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                icon: Icon(
-                  icons.undoAction,
-                  color: stateManager.position > 0
-                      ? imageEditorTheme.appBarForegroundColor
-                      : imageEditorTheme.appBarForegroundColor.withAlpha(80),
-                ),
-                onPressed: undoAction,
-              ),
-              IconButton(
-                key: const ValueKey('MainEditorMainRedoButton'),
-                tooltip: i18n.redo,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                icon: Icon(
-                  icons.redoAction,
-                  color: stateManager.position < stateHistory.length - 1
-                      ? imageEditorTheme.appBarForegroundColor
-                      : imageEditorTheme.appBarForegroundColor.withAlpha(80),
-                ),
-                onPressed: redoAction,
-              ),
-              IconButton(
-                key: const ValueKey('MainEditorMainDoneButton'),
-                tooltip: i18n.done,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                icon: Icon(icons.doneIcon),
-                iconSize: 28,
-                onPressed: doneEditing,
-              ),
-            ],
-          );
+    return AppBar(
+      automaticallyImplyLeading: false,
+      foregroundColor: imageEditorTheme.appBarForegroundColor,
+      backgroundColor: imageEditorTheme.appBarBackgroundColor,
+      actions: [
+        IconButton(
+          tooltip: i18n.cancel,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          icon: Icon(icons.closeEditor),
+          onPressed: closeEditor,
+        ),
+        const Spacer(),
+        IconButton(
+          key: const ValueKey('MainEditorMainUndoButton'),
+          tooltip: i18n.undo,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          icon: Icon(
+            icons.undoAction,
+            color: stateManager.position > 0
+                ? imageEditorTheme.appBarForegroundColor
+                : imageEditorTheme.appBarForegroundColor.withAlpha(80),
+          ),
+          onPressed: undoAction,
+        ),
+        IconButton(
+          key: const ValueKey('MainEditorMainRedoButton'),
+          tooltip: i18n.redo,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          icon: Icon(
+            icons.redoAction,
+            color: stateManager.position < stateHistory.length - 1
+                ? imageEditorTheme.appBarForegroundColor
+                : imageEditorTheme.appBarForegroundColor.withAlpha(80),
+          ),
+          onPressed: redoAction,
+        ),
+        IconButton(
+          key: const ValueKey('MainEditorMainDoneButton'),
+          tooltip: i18n.done,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          icon: Icon(icons.doneIcon),
+          iconSize: 28,
+          onPressed: doneEditing,
+        ),
+      ],
+    );
   }
 
   Widget _buildBody() {
     return LayoutBuilder(builder: (context, constraints) {
-      sizesManager.bodySize = constraints.biggest;
+      // sizesManager.bodySize = constraints.biggest;
       return Listener(
         behavior: HitTestBehavior.translucent,
         onPointerSignal: isDesktop && _activeLayer != null
@@ -1846,64 +1894,74 @@ class ProImageEditorState extends State<ProImageEditor>
   }
 
   Widget _buildInteractiveContent() {
-    return Center(
-      child: Stack(
-        children: [
-          ContentRecorder(
-            controller: _controllers.screenshot,
-            child: Stack(
-              alignment: Alignment.center,
-              fit: StackFit.expand,
-              children: [
-                /// Build Image
-                _buildImage(),
+    return SingleChildScrollView(
+      child: SizedBox(
+        width: sizesManager.bodySize.width,
+        height: sizesManager.bodySize.height,
+        child: Center(
+          child: Stack(
+            children: [
+              ContentRecorder(
+                controller: _controllers.screenshot,
+                child: Stack(
+                  alignment: Alignment.center,
+                  fit: StackFit.expand,
+                  children: [
+                    /// Build Image
+                    _buildImage(),
 
-                /// Build layer stack
-                _buildLayers(),
+                    /// Build layer stack
+                    _buildLayers(),
+                    //
+                    // if (widget.configs.imageGenerationConfigs
+                    //     .captureOnlyBackgroundImageArea)
+                    //   Hero(
+                    //     tag: 'crop_layer_painter_hero',
+                    //     child: CustomPaint(
+                    //       foregroundPainter: imageGenerationConfigs
+                    //               .captureOnlyBackgroundImageArea
+                    //           ? CropLayerPainter(
+                    //               opacity: imageEditorTheme
+                    //                   .outsideCaptureAreaLayerOpacity,
+                    //               backgroundColor:
+                    //               imageEditorTheme.background,
+                    //               imgRatio:
+                    //                   stateManager.
+                    //                   transformConfigs.isNotEmpty
+                    //                       ? stateManager.transformConfigs
+                    //                           .cropRect.size.aspectRatio
+                    //                       : sizesManager
+                    //                           .decodedImageSize.aspectRatio,
+                    //               isRoundCropper:
+                    //                   cropRotateEditorConfigs.roundCropper,
+                    //               is90DegRotated: stateManager
+                    //                   .transformConfigs.is90DegRotated,
+                    //               appbarHeight: selectedLayerIndex >= 0
+                    //                   ? sizesManager.appBarHeight
+                    //                   : 0,
+                    //               bottombarHeight: selectedLayerIndex >= 0
+                    //                   ? sizesManager.bottomBarHeight
+                    //                   : 0,
+                    //             )
+                    //           : null,
+                    //       child: const SizedBox.expand(),
+                    //     ),
+                    //   ),
 
-                if (widget.configs.imageGenerationConfigs
-                    .captureOnlyBackgroundImageArea)
-                  Hero(
-                    tag: 'crop_layer_painter_hero',
-                    child: CustomPaint(
-                      foregroundPainter: imageGenerationConfigs
-                              .captureOnlyBackgroundImageArea
-                          ? CropLayerPainter(
-                              opacity: imageEditorTheme
-                                  .outsideCaptureAreaLayerOpacity,
-                              backgroundColor: imageEditorTheme.background,
-                              imgRatio: stateManager.transformConfigs.isNotEmpty
-                                  ? stateManager.transformConfigs.cropRect.size
-                                      .aspectRatio
-                                  : sizesManager.decodedImageSize.aspectRatio,
-                              isRoundCropper:
-                                  cropRotateEditorConfigs.roundCropper,
-                              is90DegRotated:
-                                  stateManager.transformConfigs.is90DegRotated,
-                              appbarHeight: selectedLayerIndex >= 0
-                                  ? sizesManager.appBarHeight
-                                  : 0,
-                              bottombarHeight: selectedLayerIndex >= 0
-                                  ? sizesManager.bottomBarHeight
-                                  : 0,
-                            )
-                          : null,
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-
-                /// Build helper stuff
-                if (!_processFinalImage) ...[
-                  _buildHelperLines(),
-                  if (selectedLayerIndex >= 0) _buildRemoveIcon(),
-                ],
-              ],
-            ),
+                    /// Build helper stuff
+                    if (!_processFinalImage) ...[
+                      _buildHelperLines(),
+                      // if (selectedLayerIndex >= 0) _buildRemoveIcon(),
+                    ],
+                  ],
+                ),
+              ),
+              if (customWidgets.mainEditor.bodyItems != null)
+                ...customWidgets.mainEditor.bodyItems!(
+                    this, _rebuildController.stream),
+            ],
           ),
-          if (customWidgets.mainEditor.bodyItems != null)
-            ...customWidgets.mainEditor.bodyItems!(
-                this, _rebuildController.stream),
-        ],
+        ),
       ),
     );
   }
@@ -1917,153 +1975,152 @@ class ProImageEditorState extends State<ProImageEditor>
           .call(this, _rebuildController.stream, _bottomBarKey);
     }
 
-    return selectedLayerIndex >= 0
-        ? null
-        : SizedBox(
-            key: _bottomBarKey,
-            child: LayoutBuilder(builder: (context, constraints) {
-              return Theme(
-                data: _theme,
-                child: Scrollbar(
+    return SizedBox(
+      key: _bottomBarKey,
+      child: LayoutBuilder(builder: (context, constraints) {
+        return Theme(
+          data: _theme,
+          child: Scrollbar(
+            controller: _controllers.bottomBarScrollCtrl,
+            scrollbarOrientation: ScrollbarOrientation.top,
+            thickness: isDesktop ? null : 0,
+            child: BottomAppBar(
+              height: kBottomNavigationBarHeight,
+              color: imageEditorTheme.bottomBarBackgroundColor,
+              padding: EdgeInsets.zero,
+              child: Center(
+                child: SingleChildScrollView(
                   controller: _controllers.bottomBarScrollCtrl,
-                  scrollbarOrientation: ScrollbarOrientation.top,
-                  thickness: isDesktop ? null : 0,
-                  child: BottomAppBar(
-                    height: kBottomNavigationBarHeight,
-                    color: imageEditorTheme.bottomBarBackgroundColor,
-                    padding: EdgeInsets.zero,
-                    child: Center(
-                      child: SingleChildScrollView(
-                        controller: _controllers.bottomBarScrollCtrl,
-                        scrollDirection: Axis.horizontal,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minWidth: min(
-                                sizesManager.lastScreenSize.width != 0
-                                    ? sizesManager.lastScreenSize.width
-                                    : constraints.maxWidth,
-                                600),
-                            maxWidth: 600,
-                          ),
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                if (paintEditorConfigs.enabled)
-                                  FlatIconTextButton(
-                                    key: const ValueKey(
-                                        'open-painting-editor-btn'),
-                                    label: Text(
-                                        i18n.paintEditor
-                                            .bottomNavigationBarText,
-                                        style: bottomTextStyle),
-                                    icon: Icon(
-                                      icons.paintingEditor.bottomNavBar,
-                                      size: bottomIconSize,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: openPaintingEditor,
-                                  ),
-                                if (textEditorConfigs.enabled)
-                                  FlatIconTextButton(
-                                    key: const ValueKey('open-text-editor-btn'),
-                                    label: Text(
-                                        i18n.textEditor.bottomNavigationBarText,
-                                        style: bottomTextStyle),
-                                    icon: Icon(
-                                      icons.textEditor.bottomNavBar,
-                                      size: bottomIconSize,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: openTextEditor,
-                                  ),
-                                if (cropRotateEditorConfigs.enabled)
-                                  FlatIconTextButton(
-                                    key: const ValueKey(
-                                        'open-crop-rotate-editor-btn'),
-                                    label: Text(
-                                        i18n.cropRotateEditor
-                                            .bottomNavigationBarText,
-                                        style: bottomTextStyle),
-                                    icon: Icon(
-                                      icons.cropRotateEditor.bottomNavBar,
-                                      size: bottomIconSize,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: openCropRotateEditor,
-                                  ),
-                                if (filterEditorConfigs.enabled)
-                                  FlatIconTextButton(
-                                    key: const ValueKey(
-                                        'open-filter-editor-btn'),
-                                    label: Text(
-                                        i18n.filterEditor
-                                            .bottomNavigationBarText,
-                                        style: bottomTextStyle),
-                                    icon: Icon(
-                                      icons.filterEditor.bottomNavBar,
-                                      size: bottomIconSize,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: openFilterEditor,
-                                  ),
-                                if (blurEditorConfigs.enabled)
-                                  FlatIconTextButton(
-                                    key: const ValueKey('open-blur-editor-btn'),
-                                    label: Text(
-                                        i18n.blurEditor.bottomNavigationBarText,
-                                        style: bottomTextStyle),
-                                    icon: Icon(
-                                      icons.blurEditor.bottomNavBar,
-                                      size: bottomIconSize,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: openBlurEditor,
-                                  ),
-                                if (emojiEditorConfigs.enabled)
-                                  FlatIconTextButton(
-                                    key:
-                                        const ValueKey('open-emoji-editor-btn'),
-                                    label: Text(
-                                        i18n.emojiEditor
-                                            .bottomNavigationBarText,
-                                        style: bottomTextStyle),
-                                    icon: Icon(
-                                      icons.emojiEditor.bottomNavBar,
-                                      size: bottomIconSize,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: openEmojiEditor,
-                                  ),
-                                if (stickerEditorConfigs?.enabled == true)
-                                  FlatIconTextButton(
-                                    key: const ValueKey(
-                                        'open-sticker-editor-btn'),
-                                    label: Text(
-                                        i18n.stickerEditor
-                                            .bottomNavigationBarText,
-                                        style: bottomTextStyle),
-                                    icon: Icon(
-                                      icons.stickerEditor.bottomNavBar,
-                                      size: bottomIconSize,
-                                      color: Colors.white,
-                                    ),
-                                    onPressed: openStickerEditor,
-                                  ),
-                              ],
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: min(
+                          sizesManager.lastScreenSize.width != 0
+                              ? sizesManager.lastScreenSize.width
+                              : constraints.maxWidth,
+                          600),
+                      maxWidth: 600,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          FlatIconTextButton(
+                            key: const ValueKey('open-text-editor-btn12'),
+                            label: Text(i18n.textEditor.bottomNavigationBarText,
+                                style: bottomTextStyle),
+                            icon: Icon(
+                              icons.textEditor.bottomNavBar,
+                              size: bottomIconSize,
+                              color: Colors.white,
                             ),
+                            onPressed: openQuillEditor,
                           ),
-                        ),
+                          if (paintEditorConfigs.enabled)
+                            FlatIconTextButton(
+                              key: const ValueKey('open-painting-editor-btn'),
+                              label: Text(
+                                  i18n.paintEditor.bottomNavigationBarText,
+                                  style: bottomTextStyle),
+                              icon: Icon(
+                                icons.paintingEditor.bottomNavBar,
+                                size: bottomIconSize,
+                                color: Colors.white,
+                              ),
+                              onPressed: openPaintingEditor,
+                            ),
+                          if (textEditorConfigs.enabled)
+                            FlatIconTextButton(
+                              key: const ValueKey('open-text-editor-btn'),
+                              label: Text(
+                                  i18n.textEditor.bottomNavigationBarText,
+                                  style: bottomTextStyle),
+                              icon: Icon(
+                                icons.textEditor.bottomNavBar,
+                                size: bottomIconSize,
+                                color: Colors.white,
+                              ),
+                              onPressed: openTextEditor,
+                            ),
+                          if (cropRotateEditorConfigs.enabled)
+                            FlatIconTextButton(
+                              key:
+                                  const ValueKey('open-crop-rotate-editor-btn'),
+                              label: Text(
+                                  i18n.cropRotateEditor.bottomNavigationBarText,
+                                  style: bottomTextStyle),
+                              icon: Icon(
+                                icons.cropRotateEditor.bottomNavBar,
+                                size: bottomIconSize,
+                                color: Colors.white,
+                              ),
+                              onPressed: openCropRotateEditor,
+                            ),
+                          if (filterEditorConfigs.enabled)
+                            FlatIconTextButton(
+                              key: const ValueKey('open-filter-editor-btn'),
+                              label: Text(
+                                  i18n.filterEditor.bottomNavigationBarText,
+                                  style: bottomTextStyle),
+                              icon: Icon(
+                                icons.filterEditor.bottomNavBar,
+                                size: bottomIconSize,
+                                color: Colors.white,
+                              ),
+                              onPressed: openFilterEditor,
+                            ),
+                          if (blurEditorConfigs.enabled)
+                            FlatIconTextButton(
+                              key: const ValueKey('open-blur-editor-btn'),
+                              label: Text(
+                                  i18n.blurEditor.bottomNavigationBarText,
+                                  style: bottomTextStyle),
+                              icon: Icon(
+                                icons.blurEditor.bottomNavBar,
+                                size: bottomIconSize,
+                                color: Colors.white,
+                              ),
+                              onPressed: openBlurEditor,
+                            ),
+                          if (emojiEditorConfigs.enabled)
+                            FlatIconTextButton(
+                              key: const ValueKey('open-emoji-editor-btn'),
+                              label: Text(
+                                  i18n.emojiEditor.bottomNavigationBarText,
+                                  style: bottomTextStyle),
+                              icon: Icon(
+                                icons.emojiEditor.bottomNavBar,
+                                size: bottomIconSize,
+                                color: Colors.white,
+                              ),
+                              onPressed: openEmojiEditor,
+                            ),
+                          if (stickerEditorConfigs?.enabled == true)
+                            FlatIconTextButton(
+                              key: const ValueKey('open-sticker-editor-btn'),
+                              label: Text(
+                                  i18n.stickerEditor.bottomNavigationBarText,
+                                  style: bottomTextStyle),
+                              icon: Icon(
+                                icons.stickerEditor.bottomNavBar,
+                                size: bottomIconSize,
+                                color: Colors.white,
+                              ),
+                              onPressed: openStickerEditor,
+                            ),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              );
-            }),
-          );
+              ),
+            ),
+          ),
+        );
+      }),
+    );
   }
 
   Widget _buildLayers() {
@@ -2110,7 +2167,7 @@ class ProImageEditorState extends State<ProImageEditor>
                             return LayerWidget(
                               key: layerItem.key,
                               configs: configs,
-                              editorCenterX: sizesManager.editorSize.width / 2,
+                              editorCenterX: sizesManager.bodySize.width / 2,
                               editorCenterY: sizesManager
                                   .editorCenterY(selectedLayerIndex),
                               layerData: layerItem,
@@ -2129,6 +2186,8 @@ class ProImageEditorState extends State<ProImageEditor>
                               onEditTap: () {
                                 if (layerItem is TextLayerData) {
                                   _onTextLayerTap(layerItem);
+                                } else if (layerItem is QuillDataLayer) {
+                                  _onQuillDocumentTap(layerItem);
                                 }
                               },
                               onTap: (layer) async {
@@ -2142,6 +2201,8 @@ class ProImageEditorState extends State<ProImageEditor>
                                           : layer.id;
                                 } else if (layer is TextLayerData) {
                                   _onTextLayerTap(layer);
+                                } else if (layer is QuillDataLayer) {
+                                  _onQuillDocumentTap(layer);
                                 }
                               },
                               onTapUp: () {
@@ -2201,8 +2262,10 @@ class ProImageEditorState extends State<ProImageEditor>
   }
 
   Widget _buildHelperLines() {
-    double screenH = sizesManager.screen.height;
-    double screenW = sizesManager.screen.width;
+    double screenH = sizesManager.bodySize.height;
+    double screenW = sizesManager.bodySize.width;
+    // double screenH = sizesManager.screen.height;
+    // double screenW = sizesManager.screen.width;
     double lineH = 1.25;
     int duration = 100;
     if (!layerInteractionManager.showHelperLines) {
@@ -2313,29 +2376,35 @@ class ProImageEditorState extends State<ProImageEditor>
             )
           : EdgeInsets.zero,
       child: Hero(
-        tag: heroTag,
-        createRectTween: (begin, end) => RectTween(begin: begin, end: end),
-        child: !_inited
-            ? AutoImage(
-                editorImage,
-                fit: BoxFit.contain,
-                width: sizesManager.decodedImageSize.width,
-                height: sizesManager.decodedImageSize.height,
-                designMode: designMode,
-              )
-            : TransformedContentGenerator(
-                transformConfigs: stateManager.transformConfigs,
-                configs: configs,
-                child: FilteredImage(
-                  width: sizesManager.decodedImageSize.width,
-                  height: sizesManager.decodedImageSize.height,
-                  designMode: designMode,
-                  image: editorImage,
-                  filters: stateManager.activeFilters,
-                  blurFactor: stateManager.activeBlur,
-                ),
-              ),
-      ),
+          tag: heroTag,
+          createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+          child:
+              // !_inited ?
+              AutoImage(
+            editorImage,
+            fit: BoxFit.fill,
+            // width: sizesManager.bodySize.width,
+            // height: sizesManager.bodySize.height,
+            // width: sizesManager.decodedImageSize.width,
+            // height: sizesManager.decodedImageSize.height,
+            designMode: designMode,
+          )
+          // : TransformedContentGenerator(
+          //     transformConfigs: stateManager.transformConfigs,
+          //     configs: configs,
+          //     child: FilteredImage(
+          //       width: sizesManager.bodySize.width,
+          //       height: sizesManager.bodySize.height,
+          //       // width: sizesManager.decodedImageSize.width,
+          //       // height: sizesManager.decodedImageSize.height,
+          //       fit: BoxFit.fill,
+          //       designMode: designMode,
+          //       image: editorImage,
+          //       filters: stateManager.activeFilters,
+          //       blurFactor: stateManager.activeBlur,
+          //     ),
+          //   ),
+          ),
     );
   }
 }
