@@ -183,7 +183,8 @@ class _LayerInteractionHelperWidgetState
             if (widget.layerData.runtimeType == TextLayerData ||
                 (widget.layerData.runtimeType == StickerLayerData &&
                     widget.callbacks.stickerEditorCallbacks?.onTapEditSticker !=
-                        null))
+                        null) ||
+                widget.layerData.runtimeType == QuillDataLayer)
               Positioned(
                 top: 0,
                 right: 0,

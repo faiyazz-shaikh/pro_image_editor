@@ -173,9 +173,11 @@ class _ReorderLayerSheetState extends State<ReorderLayerSheet> {
                                 child: (layer as StickerLayerData).sticker,
                               ),
                             )
-                          : Text(
-                              layer.id.toString(),
-                            ),
+                          : layer.runtimeType == QuillDataLayer
+                              ? const Text('Quill Editor')
+                              : Text(
+                                  layer.id.toString(),
+                                ),
         );
       },
       itemCount: widget.layers.length,

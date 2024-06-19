@@ -25,6 +25,8 @@ class ImageEditorCustomWidgets {
     this.cropRotateEditor = const CustomWidgetsCropRotateEditor(),
     this.filterEditor = const CustomWidgetsFilterEditor(),
     this.blurEditor = const CustomWidgetsBlurEditor(),
+    this.bottomNavigation,
+    this.appBar,
   });
 
   /// The main editor instance.
@@ -111,4 +113,8 @@ class ImageEditorCustomWidgets {
 
   /// Replace the existing CircularProgressIndicator.
   final Widget? circularProgressIndicator;
+
+  final Widget? bottomNavigation;
+
+  final PreferredSizeWidget? appBar;
 }

@@ -15,6 +15,7 @@ class ExportEditorConfigs {
     this.exportFilter = true,
     this.exportEmoji = true,
     this.exportSticker = true,
+    this.exportQuilDocument = true,
   });
 
   /// The span of the export history to include in the export.
@@ -53,4 +54,6 @@ class ExportEditorConfigs {
   ///
   /// Warning: Exporting stickers may result in increased file size.
   final bool exportSticker;
+
+  final bool exportQuilDocument;
 }

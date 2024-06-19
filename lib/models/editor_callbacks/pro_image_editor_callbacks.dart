@@ -1,3 +1,8 @@
+// Flutter imports:
+
+// Project imports:
+import 'package:pro_image_editor/models/layer/layer.dart';
+
 import 'blur_editor_callbacks.dart';
 import 'crop_rotate_editor_callbacks.dart';
 import 'editor_callbacks_typedef.dart';
@@ -34,6 +39,7 @@ class ProImageEditorCallbacks {
     this.blurEditorCallbacks,
     this.emojiEditorCallbacks,
     this.stickerEditorCallbacks,
+    this.onQuillEditorTap,
   });
 
   /// A callback function that is triggered when the image generation is
@@ -100,4 +106,6 @@ class ProImageEditorCallbacks {
 
   /// Callbacks from the sticker editor.
   final StickerEditorCallbacks? stickerEditorCallbacks;
+
+  final Future<QuillDataLayer> Function(QuillDataLayer?)? onQuillEditorTap;
 }

@@ -74,6 +74,18 @@ class Layer {
         /// Returns a StickerLayerData instance when type is 'sticker',
         /// utilizing the stickers list.
         return StickerLayerData.fromMap(layer, map, stickers);
+
+      case 'quillDocument':
+        return QuillDataLayer(
+          flipX: layer.flipX,
+          flipY: layer.flipY,
+          offset: layer.offset,
+          rotation: layer.rotation,
+          scale: layer.scale,
+          document: map['document'],
+          initHeight: map['initHeight'],
+          initWidth: map['initWidth'],
+        );
       default:
 
         /// Returns the base Layer instance when type is unrecognized.
@@ -545,5 +557,34 @@ class StickerLayerData extends Layer {
       flipX: flipX ?? this.flipX,
       flipY: flipY ?? this.flipY,
     );
+  }
+}
+
+class QuillDataLayer extends Layer {
+  String document;
+  double? initHeight;
+  double? initWidth;
+
+  QuillDataLayer({
+    required this.document,
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      ...super.toMap(),
+      'document': document,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'type': 'quillDocument',
+    };
   }
 }
