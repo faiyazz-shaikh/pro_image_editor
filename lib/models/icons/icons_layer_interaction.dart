@@ -15,6 +15,7 @@ class IconsLayerInteraction {
     this.remove = Icons.clear,
     this.edit = Icons.edit_outlined,
     this.rotateScale = Icons.sync,
+    this.duplicate = Icons.copy_rounded,
   });
 
   /// The icon data for removing a layer.
@@ -25,4 +26,7 @@ class IconsLayerInteraction {
 
   /// The icon data for rotating or scaling a layer.
   final IconData rotateScale;
+
+  /// duplicate
+  final IconData duplicate;
 }

@@ -1,5 +1,6 @@
 // Dart imports:
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui show Image;
@@ -8,6 +9,7 @@ import 'dart:ui' as ui show Image;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pro_image_editor/utils/unique_id_generator.dart';
 
 // Package imports:
 import 'package:vibration/vibration.dart';
@@ -666,7 +668,7 @@ class ProImageEditorState extends State<ProImageEditor>
     setState(() {});
     takeScreenshot();
     if (selectedLayerId.isNotEmpty) {
-      /// Skip one frame to ensure captured image in separate thread will not 
+      /// Skip one frame to ensure captured image in separate thread will not
       /// capture the border.
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         _layerInteractionManager.selectedLayerId = selectedLayerId;
@@ -692,14 +694,14 @@ class ProImageEditorState extends State<ProImageEditor>
         _imageNeedDecode && stateHistoryConfigs.initStateHistory != null;
     _imageNeedDecode = false;
 
-    if (shouldImportStateHistory && i18n.importStateHistoryMsg.isNotEmpty) {
-      LoadingDialog.instance.show(
-        context,
-        theme: _theme,
-        configs: configs,
-        message: i18n.importStateHistoryMsg,
-      );
-    }
+    // if (shouldImportStateHistory && i18n.importStateHistoryMsg.isNotEmpty) {
+    //   LoadingDialog.instance.show(
+    //     context,
+    //     theme: _theme,
+    //     configs: configs,
+    //     message: i18n.importStateHistoryMsg,
+    //   );
+    // }
     _imageInfos = await decodeImageInfos(
       bytes: await editorImage.safeByteArray(context),
       screenSize: Size(
@@ -708,8 +710,8 @@ class ProImageEditorState extends State<ProImageEditor>
       ),
       configs: transformConfigs ?? stateManager.transformConfigs,
     );
-    sizesManager.originalImageSize ??= _imageInfos!.rawSize;
-    sizesManager.decodedImageSize = _imageInfos!.renderedSize;
+    sizesManager.originalImageSize ??= sizesManager.bodySize;
+    sizesManager.decodedImageSize = sizesManager.bodySize;
 
     _initialized = true;
     if (!_decodeImageCompleter.isCompleted) {
@@ -718,11 +720,11 @@ class ProImageEditorState extends State<ProImageEditor>
 
     if (shouldImportStateHistory) {
       importStateHistory(stateHistoryConfigs.initStateHistory!);
-      if (i18n.importStateHistoryMsg.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          LoadingDialog.instance.hide();
-        });
-      }
+      // if (i18n.importStateHistoryMsg.isNotEmpty) {
+      //   WidgetsBinding.instance.addPostFrameCallback((_) async {
+      //     LoadingDialog.instance.hide();
+      //   });
+      // }
     }
     if (mounted) setState(() {});
     mainEditorCallbacks?.handleUpdateUI();
@@ -734,15 +736,17 @@ class ProImageEditorState extends State<ProImageEditor>
   }
 
   void _calcAppBarHeight() {
-    double? renderedBottomBarHeight =
-        _bottomBarKey.currentContext?.size?.height;
-    if (renderedBottomBarHeight != null) {
-      sizesManager
-        ..bottomBarHeight = renderedBottomBarHeight
-        ..appBarHeight = sizesManager.editorSize.height -
-            sizesManager.bodySize.height -
-            sizesManager.bottomBarHeight;
-    }
+    sizesManager.bottomBarHeight = 0;
+    sizesManager.appBarHeight = 0;
+    // double? renderedBottomBarHeight =
+    //     _bottomBarKey.currentContext?.size?.height;
+    // if (renderedBottomBarHeight != null) {
+    //   sizesManager
+    //     ..bottomBarHeight = renderedBottomBarHeight
+    //     ..appBarHeight = sizesManager.editorSize.height -
+    //         sizesManager.bodySize.height -
+    //         sizesManager.bottomBarHeight;
+    // }
   }
 
   /// Handle the start of a scaling operation.
@@ -750,9 +754,10 @@ class ProImageEditorState extends State<ProImageEditor>
   /// This method is called when a scaling operation begins and initializes the
   /// necessary variables.
   void _onScaleStart(ScaleStartDetails details) {
-    if (sizesManager.bodySize != sizesManager.editorSize) {
-      _calcAppBarHeight();
-    }
+    _calcAppBarHeight();
+    // if (sizesManager.bodySize != sizesManager.editorSize) {
+    //   _calcAppBarHeight();
+    // }
 
     layerInteractionManager
       ..snapStartPosX = details.focalPoint.dx
@@ -831,7 +836,7 @@ class ProImageEditorState extends State<ProImageEditor>
           activeLayer: _activeLayer!,
           configEnabledHitVibration: helperLines.hitVibration,
           details: details,
-          editorSize: sizesManager.editorSize,
+          editorSize: sizesManager.bodySize,
           layerTheme: imageEditorTheme.layerInteraction,
           editorScaleFactor:
               _interactiveViewer.currentState?.scaleFactor ?? 1.0,
@@ -869,7 +874,7 @@ class ProImageEditorState extends State<ProImageEditor>
           configs: configs,
           activeLayer: _activeLayer!,
           detail: details,
-          editorSize: sizesManager.editorSize,
+          editorSize: sizesManager.bodySize,
           screenPaddingHelper: sizesManager.imageMargin,
           configEnabledHitVibration: helperLines.hitVibration,
         );
@@ -955,6 +960,34 @@ class ProImageEditorState extends State<ProImageEditor>
   /// service.
   void removeKeyEventListener() {
     ServicesBinding.instance.keyboard.removeHandler(_onKeyEvent);
+  }
+
+  Future<void> _onQuillDocumentTap(QuillDataLayer layerData) async {
+    QuillDataLayer? layer =
+        await widget.callbacks.onQuillEditorTap?.call(layerData);
+
+    if (layer == null || !mounted) return;
+
+    int i = activeLayers.indexWhere((element) => element.id == layerData.id);
+    if (i >= 0) {
+      _setTempLayer(layerData);
+      QuillDataLayer quillDataLayer = activeLayers[i] as QuillDataLayer;
+      quillDataLayer
+        ..document = layer.document
+        ..id = layerData.id
+        ..flipX = layerData.flipX
+        ..flipY = layerData.flipY
+        ..offset = layerData.offset
+        ..scale = layerData.scale
+        ..rotation = layerData.rotation
+        ..initWidth = layerData.initWidth
+        ..initHeight = layerData.initHeight;
+
+      _updateTempLayer();
+    }
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
   }
 
   void _selectLayerAfterHeroIsDone(String id) {
@@ -1063,11 +1096,11 @@ class ProImageEditorState extends State<ProImageEditor>
                       child: Container(
                         width: imageEditorTheme
                                 .subEditorPage.enforceSizeFromMainEditor
-                            ? sizesManager.editorSize.width
+                            ? sizesManager.bodySize.width
                             : null,
                         height: imageEditorTheme
                                 .subEditorPage.enforceSizeFromMainEditor
-                            ? sizesManager.editorSize.height
+                            ? sizesManager.bodySize.height
                             : null,
                         clipBehavior: Clip.hardEdge,
                         decoration: BoxDecoration(
@@ -1151,6 +1184,18 @@ class ProImageEditorState extends State<ProImageEditor>
       ),
       duration: duration,
     );
+
+    if (layer == null || !mounted) return;
+
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  void openQuillEditor() async {
+    QuillDataLayer? layer = await widget.callbacks.onQuillEditorTap?.call(null);
 
     if (layer == null || !mounted) return;
 
@@ -1532,12 +1577,12 @@ class ProImageEditorState extends State<ProImageEditor>
     if (isSubEditorOpen) await _pageOpenCompleter.future;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      LoadingDialog.instance.show(
-        context,
-        theme: _theme,
-        configs: configs,
-        message: i18n.doneLoadingMsg,
-      );
+      // LoadingDialog.instance.show(
+      //   context,
+      //   theme: _theme,
+      //   configs: configs,
+      //   message: i18n.doneLoadingMsg,
+      // );
 
       if (callbacks.onThumbnailGenerated != null) {
         if (_imageInfos == null) await decodeImage();
@@ -1556,7 +1601,7 @@ class ProImageEditorState extends State<ProImageEditor>
         await onImageEditingComplete?.call(bytes);
       }
 
-      LoadingDialog.instance.hide();
+      // LoadingDialog.instance.hide();
 
       onCloseEditor?.call();
 
@@ -1598,6 +1643,28 @@ class ProImageEditorState extends State<ProImageEditor>
         Uint8List.fromList([]);
   }
 
+  ///
+  Future<Uint8List> captureNewEditorImage() async {
+    if (isSubEditorOpen) {
+      Navigator.pop(context);
+      if (!_pageOpenCompleter.isCompleted) await _pageOpenCompleter.future;
+      if (!mounted) return Uint8List.fromList([]);
+    }
+
+    if (_imageInfos == null) await decodeImage();
+
+    if (!mounted) return Uint8List.fromList([]);
+
+    return await _controllers.screenshot.captureFinalScreenshot(
+          imageInfos: _imageInfos!,
+          backgroundScreenshot: null,
+          originalImageBytes: stateManager.position > 0
+              ? null
+              : await editorImage.safeByteArray(context),
+        ) ??
+        Uint8List.fromList([]);
+  }
+
   /// Close the image editor.
   ///
   /// This function allows the user to close the image editor without saving
@@ -1618,7 +1685,9 @@ class ProImageEditorState extends State<ProImageEditor>
   /// Displays a warning dialog before closing the image editor.
   void closeWarning() async {
     if (disablePopScope) {
-      Navigator.pop(context);
+      if (mainEditorConfigs.enablePop) {
+        Navigator.pop(context);
+      }
       return;
     }
     _openDialog = true;
@@ -1691,7 +1760,9 @@ class ProImageEditorState extends State<ProImageEditor>
     /// Recalculate position and size
     if (import.configs.recalculateSizeAndPosition ||
         import.version == ExportImportVersion.version_1_0_0) {
-      Size imgSize = import.imgSize / (_imageInfos?.pixelRatio ?? 1);
+      Size imgSize = import.imgSize;
+      // [Excluded for journal support]
+      // Size imgSize = import.imgSize / (_imageInfos?.pixelRatio ?? 1);
       for (EditorStateHistory el in import.stateHistory) {
         for (Layer layer in el.layers) {
           if (import.configs.recalculateSizeAndPosition) {
@@ -1775,6 +1846,7 @@ class ProImageEditorState extends State<ProImageEditor>
       stateManager.position = stateHistory.length - 1;
     }
 
+    editorImage.byteArray ??= import.imageBytes;
     setState(() {});
     decodeImage(stateManager.transformConfigs);
     mainEditorCallbacks?.handleUpdateUI();
@@ -1807,6 +1879,18 @@ class ProImageEditorState extends State<ProImageEditor>
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width -
+        customWidgets.mainEditor.editorHorizontalPadding;
+    // double height = MediaQuery.of(context).size.height;
+    // double height = 0;
+    // height = (16 * width) / 9;
+    // sizesManager.bodySize = Size(width, height);
+    double height = MediaQuery.of(context).size.height -
+        customWidgets.mainEditor.appBarHeight -
+        customWidgets.mainEditor.bottomBarHeight;
+
+    // sizesManager.bodySize = customWidgets.mainEditor.bodySize;
+
     _theme = configs.theme ??
         ThemeData(
           useMaterial3: true,
@@ -1819,8 +1903,10 @@ class ProImageEditorState extends State<ProImageEditor>
     return RecordInvisibleWidget(
       controller: _controllers.screenshot,
       child: ExtendedPopScope(
-        canPop:
-            disablePopScope || stateManager.position <= 0 || _processFinalImage,
+        canPop: mainEditorConfigs.enablePop &&
+            (disablePopScope ||
+                stateManager.position <= 0 ||
+                _processFinalImage),
         onPopInvokedWithResult: (didPop, result) {
           if (!didPop &&
               !disablePopScope &&
@@ -1858,7 +1944,7 @@ class ProImageEditorState extends State<ProImageEditor>
               data: _theme,
               child: SafeArea(
                 child: LayoutBuilder(builder: (context, constraints) {
-                  sizesManager.editorSize = constraints.biggest;
+                  // sizesManager.editorSize = constraints.biggest;
                   return Scaffold(
                     backgroundColor: imageEditorTheme.background,
                     resizeToAvoidBottomInset: false,
@@ -1942,7 +2028,7 @@ class ProImageEditorState extends State<ProImageEditor>
 
   Widget _buildBody() {
     return LayoutBuilder(builder: (context, constraints) {
-      sizesManager.bodySize = constraints.biggest;
+      // sizesManager.bodySize = constraints.biggest;
       return Listener(
         behavior: HitTestBehavior.translucent,
         onPointerSignal: isDesktop && _activeLayer != null
@@ -1982,99 +2068,112 @@ class ProImageEditorState extends State<ProImageEditor>
   }
 
   Widget _buildInteractiveContent() {
-    return Center(
-      child: Stack(
-        children: [
-          Padding(
-            padding: selectedLayerIndex >= 0
-                ? EdgeInsets.only(
-                    top: sizesManager.appBarHeight,
-                    bottom: sizesManager.bottomBarHeight,
-                  )
-                : EdgeInsets.zero,
-            child: ExtendedInteractiveViewer(
-              key: _interactiveViewer,
-              // ignore: deprecated_member_use_from_same_package
-              enableZoom: mainEditorConfigs.editorIsZoomable ??
-                  mainEditorConfigs.enableZoom,
-              minScale: mainEditorConfigs.editorMinScale,
-              maxScale: mainEditorConfigs.editorMaxScale,
-              onInteractionStart: (details) {
-                callbacks.mainEditorCallbacks?.onEditorZoomScaleStart
-                    ?.call(details);
-                layerInteractionManager.freeStyleHighPerformanceEditorZoom =
-                    (paintEditorConfigs.freeStyleHighPerformanceMoving ??
-                            !isDesktop) ||
-                        (paintEditorConfigs.freeStyleHighPerformanceScaling ??
-                            !isDesktop);
+    return AspectRatio(
+      aspectRatio: customWidgets.mainEditor.aspectRatio,
+      child: LayoutBuilder(builder: (context, con) {
+        if (sizesManager.bodySize.isEmpty) {
+          sizesManager.bodySize = con.biggest;
+        }
+        debugPrint('Calculated: ${con.biggest}');
+        debugPrint('aspect ratio: ${customWidgets.mainEditor.aspectRatio}');
+        return Center(
+          child: Stack(
+            children: [
+              Padding(
+                padding: selectedLayerIndex >= 0
+                    ? EdgeInsets.only(
+                        top: sizesManager.appBarHeight,
+                        bottom: sizesManager.bottomBarHeight,
+                      )
+                    : EdgeInsets.zero,
+                child: ExtendedInteractiveViewer(
+                  key: _interactiveViewer,
+                  // ignore: deprecated_member_use_from_same_package
+                  enableZoom: mainEditorConfigs.editorIsZoomable ??
+                      mainEditorConfigs.enableZoom,
+                  minScale: mainEditorConfigs.editorMinScale,
+                  maxScale: mainEditorConfigs.editorMaxScale,
+                  onInteractionStart: (details) {
+                    callbacks.mainEditorCallbacks?.onEditorZoomScaleStart
+                        ?.call(details);
+                    layerInteractionManager.freeStyleHighPerformanceEditorZoom =
+                        (paintEditorConfigs.freeStyleHighPerformanceMoving ??
+                                !isDesktop) ||
+                            (paintEditorConfigs
+                                    .freeStyleHighPerformanceScaling ??
+                                !isDesktop);
 
-                _controllers.uiLayerCtrl.add(null);
-              },
-              onInteractionUpdate:
-                  callbacks.mainEditorCallbacks?.onEditorZoomScaleUpdate,
-              onInteractionEnd: (details) {
-                callbacks.mainEditorCallbacks?.onEditorZoomScaleEnd
-                    ?.call(details);
-                layerInteractionManager.freeStyleHighPerformanceEditorZoom =
-                    false;
-                _controllers.uiLayerCtrl.add(null);
-              },
-              child: ContentRecorder(
-                key: const ValueKey('main-editor-content-recorder'),
-                autoDestroyController: false,
-                controller: _controllers.screenshot,
-                child: Stack(
-                  alignment: Alignment.center,
-                  fit: StackFit.expand,
-                  children: [
-                    /// Build Image
-                    _buildImage(),
+                    _controllers.uiLayerCtrl.add(null);
+                  },
+                  onInteractionUpdate:
+                      callbacks.mainEditorCallbacks?.onEditorZoomScaleUpdate,
+                  onInteractionEnd: (details) {
+                    callbacks.mainEditorCallbacks?.onEditorZoomScaleEnd
+                        ?.call(details);
+                    layerInteractionManager.freeStyleHighPerformanceEditorZoom =
+                        false;
+                    _controllers.uiLayerCtrl.add(null);
+                  },
+                  child: ContentRecorder(
+                    key: const ValueKey('main-editor-content-recorder'),
+                    autoDestroyController: false,
+                    controller: _controllers.screenshot,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      fit: StackFit.expand,
+                      children: [
+                        /// Build Image
+                        _buildImage(),
 
-                    /// Build layer stack
-                    _buildLayers(),
-
-                    if (widget.configs.imageGenerationConfigs
-                        .captureOnlyBackgroundImageArea)
-                      Hero(
-                        tag: 'crop_layer_painter_hero',
-                        child: CustomPaint(
-                          foregroundPainter: imageGenerationConfigs
-                                  .captureOnlyBackgroundImageArea
-                              ? CropLayerPainter(
-                                  opacity: imageEditorTheme
-                                      .outsideCaptureAreaLayerOpacity,
-                                  backgroundColor: imageEditorTheme.background,
-                                  imgRatio:
-                                      stateManager.transformConfigs.isNotEmpty
-                                          ? stateManager.transformConfigs
-                                              .cropRect.size.aspectRatio
-                                          : sizesManager
-                                              .decodedImageSize.aspectRatio,
-                                  isRoundCropper:
-                                      cropRotateEditorConfigs.roundCropper,
-                                  is90DegRotated: stateManager
-                                      .transformConfigs.is90DegRotated,
-                                )
-                              : null,
-                          child: const SizedBox.expand(),
-                        ),
-                      ),
-                  ],
+                        /// Build layer stack
+                        _buildLayers(),
+                        //
+                        // if (widget.configs.imageGenerationConfigs
+                        //     .captureOnlyBackgroundImageArea)
+                        //   Hero(
+                        //     tag: 'crop_layer_painter_hero',
+                        //     child: CustomPaint(
+                        //       foregroundPainter: imageGenerationConfigs
+                        //               .captureOnlyBackgroundImageArea
+                        //           ? CropLayerPainter(
+                        //               opacity: imageEditorTheme
+                        //                   .outsideCaptureAreaLayerOpacity,
+                        //               backgroundColor:
+                        //               imageEditorTheme.background,
+                        //               imgRatio:
+                        //                   stateManager.
+                        //                   transformConfigs.isNotEmpty
+                        //                       ? stateManager.transformConfigs
+                        //                           .cropRect.size.aspectRatio
+                        //                       : sizesManager
+                        //                           .decodedImageSize.aspectRatio,
+                        //               isRoundCropper:
+                        //                   cropRotateEditorConfigs.roundCropper,
+                        //               is90DegRotated: stateManager
+                        //                   .transformConfigs.is90DegRotated,
+                        //             )
+                        //           : null,
+                        //       child: const SizedBox.expand(),
+                        //     ),
+                        //   ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
 
-          /// Build helper stuff
-          if (!_processFinalImage) ...[
-            _buildHelperLines(),
-            if (selectedLayerIndex >= 0) _buildRemoveIcon(),
-          ],
-          if (customWidgets.mainEditor.bodyItems != null)
-            ...customWidgets.mainEditor.bodyItems!(
-                this, _rebuildController.stream),
-        ],
-      ),
+              /// Build helper stuff
+              if (!_processFinalImage) ...[
+                _buildHelperLines(),
+                //if (selectedLayerIndex >= 0) _buildRemoveIcon(),
+              ],
+              if (customWidgets.mainEditor.bodyItems != null)
+                ...customWidgets.mainEditor.bodyItems!(
+                    this, _rebuildController.stream),
+            ],
+          ),
+        );
+      }),
     );
   }
 
@@ -2122,6 +2221,57 @@ class ProImageEditorState extends State<ProImageEditor>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
+                                FlatIconTextButton(
+                                  key: const ValueKey('open-text-editor-btn12'),
+                                  label: Text(
+                                      i18n.textEditor.bottomNavigationBarText,
+                                      style: bottomTextStyle),
+                                  icon: Icon(
+                                    icons.textEditor.bottomNavBar,
+                                    size: bottomIconSize,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: openQuillEditor,
+                                ),
+                                FlatIconTextButton(
+                                  key:
+                                      const ValueKey('open-text-editor-btn123'),
+                                  label: Text(
+                                      i18n.textEditor.bottomNavigationBarText,
+                                      style: bottomTextStyle),
+                                  icon: Icon(
+                                    icons.textEditor.bottomNavBar,
+                                    size: bottomIconSize,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: openJDPaintingEditor,
+                                ),
+                                FlatIconTextButton(
+                                  key: const ValueKey(
+                                      'open-text-editor-btn1234'),
+                                  label: Text(
+                                      i18n.textEditor.bottomNavigationBarText,
+                                      style: bottomTextStyle),
+                                  icon: Icon(
+                                    icons.textEditor.bottomNavBar,
+                                    size: bottomIconSize,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: openJDImageEditor,
+                                ),
+                                FlatIconTextButton(
+                                  key: const ValueKey(
+                                      'open-text-editor-btn12344'),
+                                  label: Text(
+                                      i18n.textEditor.bottomNavigationBarText,
+                                      style: bottomTextStyle),
+                                  icon: Icon(
+                                    icons.textEditor.bottomNavBar,
+                                    size: bottomIconSize,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: openJDStickerEditor,
+                                ),
                                 if (paintEditorConfigs.enabled)
                                   FlatIconTextButton(
                                     key: const ValueKey(
@@ -2281,7 +2431,7 @@ class ProImageEditorState extends State<ProImageEditor>
                               key: layerItem.key,
                               configs: configs,
                               callbacks: callbacks,
-                              editorCenterX: sizesManager.editorSize.width / 2,
+                              editorCenterX: sizesManager.bodySize.width / 2,
                               editorCenterY: sizesManager
                                   .editorCenterY(selectedLayerIndex),
                               layerData: layerItem,
@@ -2290,19 +2440,36 @@ class ProImageEditorState extends State<ProImageEditor>
                               selected:
                                   layerInteractionManager.selectedLayerId ==
                                       layerItem.id,
-                              isInteractive: !isSubEditorOpen,
+                              isInteractive: !isSubEditorOpen &&
+                                  configs.isLayerInteractive,
                               highPerformanceMode: layerInteractionManager
                                   .freeStyleHighPerformance,
+                              onDuplicateTap: () {
+                                if (!configs.isLayerInteractive) return;
+                                final copyLayer =
+                                    _layerCopyManager.copyLayer(layerItem);
+                                addLayer(
+                                  copyLayer
+                                    ..id = generateUniqueId()
+                                    ..key = GlobalKey()
+                                    ..offset =
+                                        copyLayer.offset + const Offset(20, 20),
+                                );
+                              },
                               onEditTap: () {
+                                if (!configs.isLayerInteractive) return;
                                 if (layerItem is TextLayerData) {
                                   _onTextLayerTap(layerItem);
                                 } else if (layerItem is StickerLayerData) {
                                   callbacks
                                       .stickerEditorCallbacks!.onTapEditSticker
                                       ?.call(this, layerItem, i);
+                                } else if (layerItem is QuillDataLayer) {
+                                  _onQuillDocumentTap(layerItem);
                                 }
                               },
                               onTap: (layer) async {
+                                if (!configs.isLayerInteractive) return;
                                 if (layerInteractionManager
                                     .layersAreSelectable(configs)) {
                                   layerInteractionManager.selectedLayerId =
@@ -2314,9 +2481,18 @@ class ProImageEditorState extends State<ProImageEditor>
                                   _checkInteractiveViewer();
                                 } else if (layer is TextLayerData) {
                                   _onTextLayerTap(layer);
+                                } else if (layer is QuillDataLayer) {
+                                  _onQuillDocumentTap(layer);
+                                } else if (layerItem is PaintingDataLayer) {
+                                  _onPaintingTap(layerItem);
+                                } else if (layerItem is JDImageLayerData) {
+                                  _onJDImageTap(layerItem);
+                                } else if (layerItem is JDStickerLayerData) {
+                                  _onJDStickerTap(layerItem);
                                 }
                               },
                               onTapUp: () {
+                                if (!configs.isLayerInteractive) return;
                                 if (layerInteractionManager.hoverRemoveBtn) {
                                   removeLayer(
                                     activeLayers.indexWhere((element) =>
@@ -2331,11 +2507,13 @@ class ProImageEditorState extends State<ProImageEditor>
                                 _checkInteractiveViewer();
                               },
                               onTapDown: () {
+                                if (!configs.isLayerInteractive) return;
                                 selectedLayerIndex = i;
                                 _setTempLayer(layerItem);
                                 _checkInteractiveViewer();
                               },
                               onScaleRotateDown: (details, layerOriginalSize) {
+                                if (!configs.isLayerInteractive) return;
                                 selectedLayerIndex = i;
                                 layerInteractionManager
                                   ..rotateScaleLayerSizeHelper =
@@ -2345,6 +2523,7 @@ class ProImageEditorState extends State<ProImageEditor>
                                 _checkInteractiveViewer();
                               },
                               onScaleRotateUp: (details) {
+                                if (!configs.isLayerInteractive) return;
                                 layerInteractionManager
                                   ..rotateScaleLayerSizeHelper = null
                                   ..rotateScaleLayerScaleHelper = null;
@@ -2355,6 +2534,7 @@ class ProImageEditorState extends State<ProImageEditor>
                                 mainEditorCallbacks?.handleUpdateUI();
                               },
                               onRemoveTap: () {
+                                if (!configs.isLayerInteractive) return;
                                 setState(() {
                                   removeLayer(
                                     activeLayers.indexWhere((element) =>
@@ -2376,8 +2556,10 @@ class ProImageEditorState extends State<ProImageEditor>
   }
 
   Widget _buildHelperLines() {
-    double screenH = sizesManager.screen.height;
-    double screenW = sizesManager.screen.width;
+    double screenH = sizesManager.bodySize.height;
+    double screenW = sizesManager.bodySize.width;
+    // double screenH = sizesManager.screen.height;
+    // double screenW = sizesManager.screen.width;
     double lineH = 1.25;
     int duration = 100;
     if (!layerInteractionManager.showHelperLines) {
@@ -2485,28 +2667,253 @@ class ProImageEditorState extends State<ProImageEditor>
 
   Widget _buildImage() {
     return Hero(
-      tag: heroTag,
-      createRectTween: (begin, end) => RectTween(begin: begin, end: end),
-      child: !_initialized
-          ? AutoImage(
-              editorImage,
-              fit: BoxFit.contain,
-              width: sizesManager.decodedImageSize.width,
-              height: sizesManager.decodedImageSize.height,
-              configs: configs,
-            )
-          : TransformedContentGenerator(
-              transformConfigs: stateManager.transformConfigs,
-              configs: configs,
-              child: FilteredImage(
-                width: sizesManager.decodedImageSize.width,
-                height: sizesManager.decodedImageSize.height,
-                configs: configs,
-                image: editorImage,
-                filters: stateManager.activeFilters,
-                blurFactor: stateManager.activeBlur,
-              ),
-            ),
+        tag: heroTag,
+        createRectTween: (begin, end) => RectTween(begin: begin, end: end),
+        child:
+            // !_initialized ?
+            AutoImage(
+          editorImage,
+          fit: BoxFit.fill,
+          // width: sizesManager.decodedImageSize.width,
+          // height: sizesManager.decodedImageSize.height,
+          configs: configs,
+        )
+        // : TransformedContentGenerator(
+        //     transformConfigs: stateManager.transformConfigs,
+        //     configs: configs,
+        //     child: FilteredImage(
+        //       width: sizesManager.decodedImageSize.width,
+        //       height: sizesManager.decodedImageSize.height,
+        //       configs: configs,
+        //       image: editorImage,
+        //       filters: stateManager.activeFilters,
+        //       blurFactor: stateManager.activeBlur,
+        //     ),
+        //   ),
+        );
+  }
+
+  Future<void> _onPaintingTap(PaintingDataLayer layerData) async {
+    PaintingDataLayer? layer =
+        await widget.callbacks.onPaintingEditorTap?.call(layerData);
+
+    if (layer == null || !mounted) return;
+
+    int i = activeLayers.indexWhere((element) => element.id == layerData.id);
+    if (i >= 0) {
+      _setTempLayer(layerData);
+      PaintingDataLayer paintingDataLayer =
+          activeLayers[i] as PaintingDataLayer;
+      paintingDataLayer
+        ..painting = layer.painting
+        ..id = layerData.id
+        ..flipX = layerData.flipX
+        ..flipY = layerData.flipY
+        ..offset = layerData.offset
+        ..scale = layerData.scale
+        ..rotation = layerData.rotation
+        ..initWidth = layerData.initWidth
+        ..initHeight = layerData.initHeight;
+
+      _updateTempLayer();
+    }
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  void openJDPaintingEditor() async {
+    PaintingDataLayer? layer =
+        await widget.callbacks.onPaintingEditorTap?.call(null);
+
+    if (layer == null || !mounted) return;
+
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  Future<void> _onJDImageTap(JDImageLayerData layerData) async {
+    JDImageLayerData? layer =
+        await widget.callbacks.onJDImageTap?.call(layerData);
+
+    if (layer == null || !mounted) return;
+
+    int i = activeLayers.indexWhere((element) => element.id == layerData.id);
+    if (i >= 0) {
+      _setTempLayer(layerData);
+      JDImageLayerData jdImageLayerData = activeLayers[i] as JDImageLayerData;
+      jdImageLayerData
+        ..image = layer.image
+        ..id = layerData.id
+        ..flipX = layerData.flipX
+        ..flipY = layerData.flipY
+        ..offset = layerData.offset
+        ..scale = layerData.scale
+        ..rotation = layerData.rotation
+        ..initWidth = layerData.initWidth
+        ..initHeight = layerData.initHeight;
+
+      _updateTempLayer();
+    }
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  void openJDImageEditor() async {
+    JDImageLayerData? layer = await widget.callbacks.onJDImageTap?.call(null);
+
+    if (layer == null || !mounted) return;
+
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  Future<void> _onJDStickerTap(JDStickerLayerData layerData) async {
+    JDStickerLayerData? layer =
+        await widget.callbacks.onJDStickerTap?.call(layerData);
+
+    if (layer == null || !mounted) return;
+
+    int i = activeLayers.indexWhere((element) => element.id == layerData.id);
+    if (i >= 0) {
+      _setTempLayer(layerData);
+      JDStickerLayerData jdStickerLayerData =
+          activeLayers[i] as JDStickerLayerData;
+      jdStickerLayerData
+        ..sticker = layer.sticker
+        ..id = layerData.id
+        ..flipX = layerData.flipX
+        ..flipY = layerData.flipY
+        ..offset = layerData.offset
+        ..scale = layerData.scale
+        ..rotation = layerData.rotation
+        ..initWidth = layerData.initWidth
+        ..initHeight = layerData.initHeight;
+
+      _updateTempLayer();
+    }
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  void openJDStickerEditor() async {
+    JDStickerLayerData? layer =
+        await widget.callbacks.onJDStickerTap?.call(null);
+
+    if (layer == null || !mounted) return;
+
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  /// Change background image
+  void changeBackgroundImage(EditorImage newEditorImage) {
+    editorImage = newEditorImage;
+    setState(() {});
+  }
+
+  /// update interaction
+  void updateInteraction() {
+    setState(() {
+      layerInteractionManager.selectedLayerId = '';
+      _checkInteractiveViewer();
+    });
+  }
+
+  /// Duplicate layer
+  void onDuplicateTap(Layer layerItem) {
+    if (layerItem is QuillDataLayer) {
+      _onQuillDocumentTap(layerItem);
+    } else if (layerItem is PaintingDataLayer) {
+      _onPaintingTap(layerItem);
+    } else if (layerItem is JDImageLayerData) {
+      _onJDImageTap(layerItem);
+    } else if (layerItem is JDStickerLayerData) {
+      _onJDStickerTap(layerItem);
+    }
+    addLayer(
+      [layerItem].toList().first
+        ..id = generateUniqueId()
+        ..key = GlobalKey(),
     );
+  }
+}
+
+Size getMax9by16Size(double width, double height) {
+  // Define the target 9:16 ratio
+  const targetAspectRatio = 9.0 / 16.0;
+
+  // Calculate the width based on the 9:16 aspect ratio
+  double targetWidth = height * targetAspectRatio;
+
+  // If the target width exceeds the given width, scale based on width instead
+  if (targetWidth > width) {
+    double targetHeight = width / targetAspectRatio;
+    return Size(width, targetHeight);
+  }
+
+  // Otherwise, use the target width and given height
+  return Size(targetWidth, height);
+}
+
+Size getBestFitSize(double width, double height) {
+  // Define aspect ratios for mobile and tablet
+  const mobileAspectRatio = 9.0 / 16.0;
+  const tabletAspectRatio = 3.0 / 4.0;
+  const squareAspectRatio = 1.0; // 1:1 for square
+
+  // Calculate sizes for each aspect ratio
+  double mobileHeight = width / mobileAspectRatio;
+  double tabletHeight = width / tabletAspectRatio;
+  double squareSize = width > height ? height : width;
+
+  if (mobileHeight <= height) {
+    // Use 9:16 if it fits within the provided dimensions
+    return Size(width, mobileHeight);
+  } else if (tabletHeight <= height) {
+    // Use 3:4 if it fits within the provided dimensions
+    return Size(width, tabletHeight);
+  } else {
+    // Use 1:1 square ratio as a fallback
+    return Size(squareSize, squareSize);
+  }
+}
+
+Size getBestFitWithoutScrolling(double width, double height) {
+  // Define the target aspect ratios for mobile and tablet
+  const mobileAspectRatio = 9.0 / 16.0;
+  const tabletAspectRatio = 3.0 / 4.0;
+
+  // Calculate the initial aspect ratio of the provided dimensions
+  double initialAspectRatio = width / height;
+
+  // Choose aspect ratio based on initial dimensions (portrait or landscape)
+  double targetAspectRatio =
+      (initialAspectRatio < 0.75) ? mobileAspectRatio : tabletAspectRatio;
+
+  // Calculate target width and height while ensuring they do not exceed provided dimensions
+  if (initialAspectRatio > targetAspectRatio) {
+    // Fit to height if initial aspect is wider
+    double targetWidth = height * targetAspectRatio;
+    return targetWidth > width
+        ? Size(width, width / targetAspectRatio)
+        : Size(targetWidth, height);
+  } else {
+    // Fit to width otherwise
+    double targetHeight = width / targetAspectRatio;
+    return targetHeight > height
+        ? Size(height * targetAspectRatio, height)
+        : Size(width, targetHeight);
   }
 }

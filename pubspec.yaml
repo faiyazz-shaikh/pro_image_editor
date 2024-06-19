@@ -44,6 +44,10 @@ dependencies:
   image: ^4.2.0
   vibration: ^1.9.0
   mime: ^1.0.5
+  flutter_drawing_board:
+    git:
+      url: https://github.com/faiyazz-shaikh/flutter_drawing_board
+      ref: feature/jd_paint_change
 
 dev_dependencies:
   flutter_test:

@@ -31,6 +31,7 @@ class ThemeLayerInteraction {
     this.removeCursor = SystemMouseCursors.click,
     this.rotateScaleCursor = SystemMouseCursors.click,
     this.editCursor = SystemMouseCursors.click,
+    this.duplicateCursor = SystemMouseCursors.click,
     this.hoverCursor = SystemMouseCursors.move,
     this.borderStyle = LayerInteractionBorderStyle.solid,
     this.showTooltips = false,
@@ -40,6 +41,8 @@ class ThemeLayerInteraction {
     this.buttonEditTextBackground = Colors.white,
     this.buttonScaleRotateColor = Colors.black,
     this.buttonScaleRotateBackground = Colors.white,
+    this.buttonDuplicateColor = Colors.black,
+    this.buttonDuplicateBackground = Colors.white,
   });
 
   /// The radius of buttons used for layer interactions.
@@ -62,6 +65,9 @@ class ThemeLayerInteraction {
 
   /// The cursor style for editing a Text layer.
   final SystemMouseCursor editCursor;
+
+  /// The cursor style for duplicate a Text layer.
+  final SystemMouseCursor duplicateCursor;
 
   /// The cursor style for rotating or scaling a layer.
   final SystemMouseCursor rotateScaleCursor;
@@ -98,6 +104,12 @@ class ThemeLayerInteraction {
   /// This value specifies the background color of the button used to remove
   /// layers, influencing its visual appearance.
   final Color buttonRemoveBackground;
+
+  /// buttonDuplicateColor
+  final Color buttonDuplicateColor;
+
+  /// buttonDuplicateBackground
+  final Color buttonDuplicateBackground;
 
   /// The color of the edit text button.
   ///

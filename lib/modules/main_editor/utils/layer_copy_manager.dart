@@ -25,6 +25,14 @@ class LayerCopyManager {
       return createCopyPaintingLayer(layer);
     } else if (layer is StickerLayerData) {
       return createCopyStickerLayer(layer);
+    } else if (layer is QuillDataLayer) {
+      return createCopyQuillDataLayer(layer);
+    } else if (layer is PaintingDataLayer) {
+      return createCopyPaintingDataLayer(layer);
+    } else if (layer is JDImageLayerData) {
+      return createCopyJDImageLayerData(layer);
+    } else if (layer is JDStickerLayerData) {
+      return createCopyJDStickerLayerData(layer);
     } else {
       return layer;
     }
@@ -94,6 +102,65 @@ class LayerCopyManager {
       item: layer.item.copy(),
       rawSize: layer.rawSize,
       opacity: layer.opacity,
+    );
+  }
+
+  QuillDataLayer createCopyQuillDataLayer(QuillDataLayer layer) {
+    return QuillDataLayer(
+      id: layer.id,
+      document: layer.document,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+    );
+  }
+
+  PaintingDataLayer createCopyPaintingDataLayer(PaintingDataLayer layer) {
+    return PaintingDataLayer(
+      id: layer.id,
+      painting: layer.painting,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+      tempWidget: layer.tempWidget,
+    );
+  }
+
+  JDImageLayerData createCopyJDImageLayerData(JDImageLayerData layer) {
+    return JDImageLayerData(
+      id: layer.id,
+      image: layer.image,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+      tempWidget: layer.tempWidget,
+    );
+  }
+
+  JDStickerLayerData createCopyJDStickerLayerData(JDStickerLayerData layer) {
+    return JDStickerLayerData(
+      id: layer.id,
+      sticker: layer.sticker,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+      tempWidget: layer.tempWidget,
     );
   }
 }

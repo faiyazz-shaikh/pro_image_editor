@@ -1,9 +1,13 @@
 // Dart imports:
+import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
-
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 // Flutter imports:
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:pro_image_editor/plugins/rounded_background_text/src/rounded_background_text.dart';
 
 // Project imports:
@@ -29,6 +33,7 @@ class LayerWidget extends StatefulWidget with SimpleConfigsAccess {
     this.onTap,
     this.onEditTap,
     this.onRemoveTap,
+    this.onDuplicateTap,
     this.highPerformanceMode = false,
     this.enableHitDetection = false,
     this.selected = false,
@@ -69,6 +74,9 @@ class LayerWidget extends StatefulWidget with SimpleConfigsAccess {
 
   /// Callback for removing the layer.
   final Function()? onRemoveTap;
+
+  /// Callback for duplicate the layer.
+  final Function()? onDuplicateTap;
 
   /// Callback for editing the layer.
   final Function()? onEditTap;
@@ -143,6 +151,18 @@ class _LayerWidgetState extends State<LayerWidget>
         break;
       case const (PaintingLayerData):
         _layerType = _LayerType.canvas;
+        break;
+      case const (QuillDataLayer):
+        _layerType = _LayerType.document;
+        break;
+      case const (PaintingDataLayer):
+        _layerType = _LayerType.painting;
+        break;
+      case const (JDImageLayerData):
+        _layerType = _LayerType.jdImage;
+        break;
+      case const (JDStickerLayerData):
+        _layerType = _LayerType.jdSticker;
         break;
       default:
         _layerType = _LayerType.unknown;
@@ -267,6 +287,7 @@ class _LayerWidgetState extends State<LayerWidget>
               },
               onScaleRotateUp: widget.onScaleRotateUp,
               onRemoveLayer: widget.onRemoveTap,
+              onDuplicateLayer: widget.onDuplicateTap,
               child: MouseRegion(
                 hitTestBehavior: HitTestBehavior.translucent,
                 cursor: _showMoveCursor
@@ -323,6 +344,14 @@ class _LayerWidgetState extends State<LayerWidget>
         return _buildSticker();
       case _LayerType.canvas:
         return _buildCanvas();
+      case _LayerType.document:
+        return _buildQuilDocumentLayer();
+      case _LayerType.painting:
+        return _buildPaintingLayer();
+      case _LayerType.jdImage:
+        return _buildJdImageLayer();
+      case _LayerType.jdSticker:
+        return _buildJdStickerLayer();
       default:
         return const SizedBox.shrink();
     }
@@ -336,6 +365,48 @@ class _LayerWidgetState extends State<LayerWidget>
       textDirection: TextDirection.ltr,
     )..layout();
     return painter.preferredLineHeight;
+  }
+
+  Widget _buildQuilDocumentLayer() {
+    var layer = _layer as QuillDataLayer;
+
+    if (configs.quillWidget != null) {
+      return configs.quillWidget!(layer);
+    }
+
+    final data = layer.document;
+    final json = jsonDecode(data);
+
+    debugPrint('height : ${layer.initHeight}');
+    debugPrint('width : ${layer.initWidth}');
+    debugPrint('scale: ${layer.scale}');
+
+    final controller = QuillController(
+      document: Document.fromJson(json as List),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+
+    return AbsorbPointer(
+      child: SizeTransition(
+        sizeFactor: AlwaysStoppedAnimation<double>(layer.scale),
+        child: SizedBox(
+          height: layer.initHeight ?? 0,
+          width: (layer.initWidth ?? 0) * layer.scale,
+          child: FittedBox(
+            fit: BoxFit.fitWidth,
+            child: SizedBox(
+              width: layer.initWidth ?? 0,
+              child: QuillEditor.basic(
+                configurations: QuillEditorConfigurations(
+                  controller: controller,
+                  scrollable: false,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// Build the text widget
@@ -409,7 +480,6 @@ class _LayerWidgetState extends State<LayerWidget>
   Widget _buildCanvas() {
     var layer = _layer as PaintingLayerData;
     return Padding(
-      // Better hit detection for mobile devices
       padding: EdgeInsets.all(isDesktop ? 0 : 15),
       child: RepaintBoundary(
         child: Opacity(
@@ -430,7 +500,101 @@ class _LayerWidgetState extends State<LayerWidget>
       ),
     );
   }
+
+  Widget _buildPaintingLayer() {
+    var layer = _layer as PaintingDataLayer;
+    return SizeTransition(
+      sizeFactor: AlwaysStoppedAnimation<double>(_layer.scale),
+      child: SizedBox(
+        width: (layer.initWidth ?? 0) * _layer.scale,
+        height: (layer.initHeight ?? 0),
+        child: FittedBox(
+          fit: BoxFit.fitWidth,
+          child: layer.tempWidget,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildJdImageLayer() {
+    var layer = _layer as JDImageLayerData;
+    return SizedBox(
+      width: (layer.initWidth ?? 100) * layer.scale,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: layer.tempWidget,
+      ),
+    );
+  }
+
+  Widget _buildJdStickerLayer() {
+    var layer = _layer as JDStickerLayerData;
+    return SizedBox(
+      width: (layer.initWidth ?? 50) * layer.scale,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: layer.tempWidget,
+      ),
+    );
+  }
 }
 
 // ignore: camel_case_types
-enum _LayerType { emoji, text, sticker, canvas, unknown }
+enum _LayerType {
+  emoji,
+  text,
+  sticker,
+  canvas,
+  unknown,
+  document,
+  painting,
+  jdImage,
+  jdSticker
+}
+
+Future<ByteData> jsonToImageCrop2(Map<String, dynamic> json) async {
+  final ByteData newByteData = jsonToByteData(json);
+
+  return newByteData;
+}
+
+Future<ui.Image> jsonToImageCrop(Map<String, dynamic> json) async {
+  final ByteData newByteData = jsonToByteData(json);
+
+  // Step 4: Convert byte data back to image
+  final ui.Image newImage = await byteDataToImage(newByteData);
+  return newImage;
+}
+
+ByteData jsonToByteData(Map<String, dynamic> json) {
+  print(json);
+  final List<int> data = List<int>.from(json['data'] as List);
+  print(data);
+  return ByteData.view(Uint8List.fromList(data).buffer);
+}
+
+Future<ui.Image> byteDataToImage(ByteData byteData) async {
+  final Completer<ui.Image> completer = Completer();
+  ui.decodeImageFromList(byteData.buffer.asUint8List(), completer.complete);
+  return completer.future;
+}
+
+class ImagePainter extends CustomPainter {
+  final ui.Image? image;
+
+  ImagePainter(this.image);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Draw the image on the canvas
+    if (image != null) {
+      canvas.drawImage(
+          image!, Offset.zero, Paint()..filterQuality = ui.FilterQuality.high);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}

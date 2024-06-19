@@ -26,6 +26,7 @@ class I18nLayerInteraction {
     this.remove = 'Remove',
     this.edit = 'Edit',
     this.rotateScale = 'Rotate and Scale',
+    this.duplicate = 'Duplicate',
   });
 
   /// Text for the remove action.
@@ -45,4 +46,7 @@ class I18nLayerInteraction {
   /// This text is displayed as the label for the action to rotate and scale
   /// a layer, customizable to match the language and style of your application.
   final String rotateScale;
+
+  /// duplicate
+  final String duplicate;
 }

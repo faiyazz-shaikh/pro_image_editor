@@ -6,6 +6,7 @@ class MainEditorConfigs {
     this.editorIsZoomable,
     this.editorMinScale = 1.0,
     this.editorMaxScale = 5.0,
+    this.enablePop = true,
   });
 
   /// {@template enableZoom}
@@ -45,4 +46,7 @@ class MainEditorConfigs {
   ///
   /// Default value is 5.0.
   final double editorMaxScale;
+
+  ///
+  final bool enablePop;
 }

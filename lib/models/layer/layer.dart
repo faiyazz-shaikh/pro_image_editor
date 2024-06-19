@@ -1,6 +1,8 @@
 // ignore_for_file: argument_type_not_assignable
 
 // Flutter imports:
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -74,6 +76,28 @@ class Layer {
         /// Returns a StickerLayerData instance when type is 'sticker',
         /// utilizing the stickers list.
         return StickerLayerData.fromMap(layer, map, stickers);
+
+      case 'JDQuillDocument':
+        return QuillDataLayer(
+          flipX: layer.flipX,
+          flipY: layer.flipY,
+          offset: layer.offset,
+          rotation: layer.rotation,
+          scale: layer.scale,
+          document: map['document'],
+          initHeight: map['initHeight'],
+          initWidth: map['initWidth'],
+        );
+
+      case 'JDPaintingDocument':
+        return PaintingDataLayer.fromMap(layer, map);
+
+      case 'JDImage':
+        return JDImageLayerData.fromMap(layer, map);
+
+      case 'JDSticker':
+        return JDStickerLayerData.fromMap(layer, map);
+
       default:
 
         /// Returns the base Layer instance when type is unrecognized.
@@ -104,6 +128,7 @@ class Layer {
   /// flip flags.
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'x': offset.dx,
       'y': offset.dy,
       'rotation': rotation,
@@ -545,5 +570,193 @@ class StickerLayerData extends Layer {
       flipX: flipX ?? this.flipX,
       flipY: flipY ?? this.flipY,
     );
+  }
+}
+
+class QuillDataLayer extends Layer {
+  String document;
+  double? initHeight;
+  double? initWidth;
+
+  QuillDataLayer({
+    required this.document,
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      ...super.toMap(),
+      'document': document,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'type': 'JDQuillDocument',
+    };
+  }
+}
+
+class PaintingDataLayer extends Layer {
+  String? painting;
+  double? initHeight;
+  double? initWidth;
+  Widget tempWidget;
+
+  PaintingDataLayer({
+    required this.painting,
+    this.tempWidget = const SizedBox(),
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  factory PaintingDataLayer.fromMap(Layer layer, Map<String, dynamic> map) {
+    /// Constructs and returns a PaintingLayerData instance with properties
+    /// derived from the layer and map.
+    return PaintingDataLayer(
+      id: layer.id,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      offset: layer.offset,
+      rotation: layer.rotation,
+      scale: layer.scale,
+      painting: map['painting'],
+      initHeight: map['initHeight'],
+      initWidth: map['initWidth'],
+      tempWidget: Image.file(
+        File(map['painting']),
+        width: map['initWidth'],
+        height: map['initHeight'],
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      ...super.toMap(),
+      'painting': painting,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'type': 'JDPaintingDocument',
+    };
+  }
+}
+
+class JDImageLayerData extends Layer {
+  String image;
+  double? initHeight;
+  double? initWidth;
+  Widget tempWidget;
+
+  JDImageLayerData({
+    required this.image,
+    this.tempWidget = const SizedBox(),
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  factory JDImageLayerData.fromMap(Layer layer, Map<String, dynamic> map) {
+    /// Constructs and returns a PaintingLayerData instance with properties
+    /// derived from the layer and map.
+    return JDImageLayerData(
+      id: layer.id,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      offset: layer.offset,
+      rotation: layer.rotation,
+      scale: layer.scale,
+      image: map['image'],
+      initHeight: map['initHeight'],
+      initWidth: map['initWidth'],
+      tempWidget: Image.file(
+        File(map['image']),
+        width: map['initWidth'],
+        height: map['initHeight'],
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      ...super.toMap(),
+      'image': image,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'type': 'JDImage',
+    };
+  }
+}
+
+class JDStickerLayerData extends Layer {
+  String sticker;
+  double? initHeight;
+  double? initWidth;
+  Widget tempWidget;
+
+  JDStickerLayerData({
+    required this.sticker,
+    this.tempWidget = const SizedBox(),
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  factory JDStickerLayerData.fromMap(Layer layer, Map<String, dynamic> map) {
+    /// Constructs and returns a PaintingLayerData instance with properties
+    /// derived from the layer and map.
+    return JDStickerLayerData(
+      id: layer.id,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      offset: layer.offset,
+      rotation: layer.rotation,
+      scale: layer.scale,
+      sticker: map['sticker'],
+      initHeight: map['initHeight'],
+      initWidth: map['initWidth'],
+      tempWidget: Image.file(
+        File(map['sticker']),
+        width: map['initWidth'],
+        height: map['initHeight'],
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      ...super.toMap(),
+      'sticker': sticker,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'type': 'JDSticker',
+    };
   }
 }
