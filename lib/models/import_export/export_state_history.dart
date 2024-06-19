@@ -143,9 +143,14 @@ class ExportStateHistory {
       if (history.isNotEmpty) 'history': history,
       if (stickers.isNotEmpty) 'stickers': stickers,
       'imgSize': {
-        'width': imageInfos.rawSize.width,
-        'height': imageInfos.rawSize.height,
+        'width': imgSize.width,
+        'height': imgSize.height,
       },
+      // [Excluded for journal support]
+      // 'imgSize': {
+      //   'width': imageInfos.rawSize.width,
+      //   'height': imageInfos.rawSize.height,
+      // },
     };
   }
 
@@ -191,7 +196,9 @@ class ExportStateHistory {
     for (var layer in element.layers) {
       if ((_configs.exportPainting && layer.runtimeType == PaintingLayerData) ||
           (_configs.exportText && layer.runtimeType == TextLayerData) ||
-          (_configs.exportEmoji && layer.runtimeType == EmojiLayerData)) {
+          (_configs.exportEmoji && layer.runtimeType == EmojiLayerData) ||
+          (_configs.exportQuilDocument &&
+              layer.runtimeType == QuillDataLayer)) {
         layers.add(layer.toMap());
       } else if (_configs.exportSticker &&
           layer.runtimeType == StickerLayerData) {
