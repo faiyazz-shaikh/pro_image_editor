@@ -143,8 +143,8 @@ class ExportStateHistory {
       if (history.isNotEmpty) 'history': history,
       if (stickers.isNotEmpty) 'stickers': stickers,
       'imgSize': {
-        'width': imageInfos.rawSize.width,
-        'height': imageInfos.rawSize.height,
+        'width': imgSize.width,
+        'height': imgSize.height,
       },
     };
   }

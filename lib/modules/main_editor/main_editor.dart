@@ -1734,7 +1734,7 @@ class ProImageEditorState extends State<ProImageEditor>
     /// Recalculate position and size
     if (import.configs.recalculateSizeAndPosition ||
         import.version == ExportImportVersion.version_1_0_0) {
-      Size imgSize = import.imgSize / (_imageInfos?.pixelRatio ?? 1);
+      Size imgSize = import.imgSize;
       for (EditorStateHistory el in import.stateHistory) {
         for (Layer layer in el.layers) {
           if (import.configs.recalculateSizeAndPosition) {
