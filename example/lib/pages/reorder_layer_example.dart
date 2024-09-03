@@ -175,9 +175,9 @@ class _ReorderLayerSheetState extends State<ReorderLayerSheet> {
                             )
                           : layer.runtimeType == QuillDataLayer
                               ? const Text('Quill Editor')
-                              : Text(
-                                  layer.id.toString(),
-                                ),
+                              : layer.runtimeType == PaintingDataLayer
+                                  ? const Text('Painting Editor')
+                                  : Text(layer.id.toString()),
         );
       },
       itemCount: widget.layers.length,

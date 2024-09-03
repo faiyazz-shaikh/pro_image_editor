@@ -27,6 +27,10 @@ class LayerCopyManager {
       return createCopyStickerLayer(layer);
     } else if (layer is QuillDataLayer) {
       return createCopyQuillDataLayer(layer);
+    } else if (layer is PaintingDataLayer) {
+      /// [JD] Change due to every time changed the variable of cropImage
+      /// on reloading
+      return (layer);
     } else {
       return layer;
     }
@@ -110,6 +114,22 @@ class LayerCopyManager {
       flipY: layer.flipY,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
+    );
+  }
+
+  PaintingDataLayer createCopyPaintingDataLayer(PaintingDataLayer layer) {
+    return PaintingDataLayer(
+      id: layer.id,
+      painting: layer.painting,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+      rect: layer.rect,
+      cropImage: layer.cropImage,
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:pro_image_editor/pro_image_editor.dart';
 // Project imports:
 import '../utils/example_constants.dart';
 import '../utils/example_helper.dart';
+import 'painting_data_layer_example/painting_data_ll.dart';
 
 class SelectableLayerExample extends StatefulWidget {
   const SelectableLayerExample({super.key});
@@ -47,6 +48,15 @@ class _SelectableLayerExampleState extends State<SelectableLayerExample>
         onImageEditingStarted: onImageEditingStarted,
         onImageEditingComplete: onImageEditingComplete,
         onCloseEditor: onCloseEditor,
+        onPaintingEditorTap: (layer) async {
+          final result = await Navigator.push<PaintingDataLayer>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MyPaintingDataAppPage(),
+            ),
+          );
+          return result!;
+        },
       ),
       configs: ProImageEditorConfigs(
         designMode: platformDesignMode,

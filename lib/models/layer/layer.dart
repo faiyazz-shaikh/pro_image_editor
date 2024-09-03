@@ -1,6 +1,8 @@
 // ignore_for_file: argument_type_not_assignable
 
 // Flutter imports:
+import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -86,6 +88,21 @@ class Layer {
           initHeight: map['initHeight'],
           initWidth: map['initWidth'],
         );
+
+      case 'paintingDocument':
+        return PaintingDataLayer(
+          flipX: layer.flipX,
+          flipY: layer.flipY,
+          offset: layer.offset,
+          rotation: layer.rotation,
+          scale: layer.scale,
+          cropImage: map['cropImage'],
+          rect: map['rect'],
+          painting: map['painting'],
+          initHeight: map['initHeight'],
+          initWidth: map['initWidth'],
+        );
+
       default:
 
         /// Returns the base Layer instance when type is unrecognized.
@@ -585,6 +602,42 @@ class QuillDataLayer extends Layer {
       'initHeight': initHeight,
       'initWidth': initWidth,
       'type': 'quillDocument',
+    };
+  }
+}
+
+class PaintingDataLayer extends Layer {
+  String? painting;
+  String? rect;
+  String? cropImage;
+  double? initHeight;
+  double? initWidth;
+  ui.Image? tempImage;
+
+  PaintingDataLayer({
+    required this.painting,
+    required this.rect,
+    required this.cropImage,
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      ...super.toMap(),
+      'painting': painting,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'rect': rect,
+      'cropImage': cropImage,
+      'type': 'paintingDocument',
     };
   }
 }

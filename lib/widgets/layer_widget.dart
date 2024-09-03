@@ -1,7 +1,9 @@
 // Dart imports:
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 // Flutter imports:
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -148,6 +150,9 @@ class _LayerWidgetState extends State<LayerWidget>
         break;
       case const (QuillDataLayer):
         _layerType = _LayerType.document;
+        break;
+      case const (PaintingDataLayer):
+        _layerType = _LayerType.painting;
         break;
       default:
         _layerType = _LayerType.unknown;
@@ -330,6 +335,8 @@ class _LayerWidgetState extends State<LayerWidget>
         return _buildCanvas();
       case _LayerType.document:
         return _buildQuilDocumentLayer();
+      case _LayerType.painting:
+        return _buildPaintingLayer();
       default:
         return const SizedBox.shrink();
     }
@@ -476,7 +483,91 @@ class _LayerWidgetState extends State<LayerWidget>
       ),
     );
   }
+
+  Widget _buildPaintingLayer() {
+    var layer = _layer as PaintingDataLayer;
+    // final DrawingController drawingController = DrawingController();
+
+    // final json = (jsonDecode(layer.painting!) as List<dynamic>);
+    //
+    // final rectJson =
+    //     jsonToRect(jsonDecode(layer.rect!) as Map<String, dynamic>);
+
+    jsonToImageCrop(jsonDecode(layer.cropImage!) as Map<String, dynamic>)
+        .then((result) {
+      layer.tempImage = result;
+    });
+
+    if (layer.tempImage != null) {
+      return SizeTransition(
+        sizeFactor: AlwaysStoppedAnimation<double>(_layer.scale),
+        child: SizedBox(
+          width: (layer.tempImage?.width.toDouble() ?? 0) * _layer.scale,
+          height: (layer.tempImage?.height.toDouble() ?? 0),
+          child: FittedBox(
+            fit: BoxFit.fitWidth,
+            child: CustomPaint(
+              painter: ImagePainter(layer.tempImage),
+              size: Size(
+                layer.tempImage?.width.toDouble() ?? 0,
+                layer.tempImage?.height.toDouble() ?? 0,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return const CircularProgressIndicator();
+  }
 }
 
 // ignore: camel_case_types
-enum _LayerType { emoji, text, sticker, canvas, unknown, document }
+enum _LayerType { emoji, text, sticker, canvas, unknown, document, painting }
+
+Future<ui.Image> jsonToImageCrop(Map<String, dynamic> json) async {
+  final ByteData newByteData = jsonToByteData(json);
+
+  // Step 4: Convert byte data back to image
+  final ui.Image newImage = await byteDataToImage(newByteData);
+  return newImage;
+}
+
+ByteData jsonToByteData(Map<String, dynamic> json) {
+  final List<int> data = List<int>.from(json['data'] as List);
+  return ByteData.view(Uint8List.fromList(data).buffer);
+}
+
+Future<ui.Image> byteDataToImage(ByteData byteData) async {
+  final Completer<ui.Image> completer = Completer();
+  ui.decodeImageFromList(byteData.buffer.asUint8List(), completer.complete);
+  return completer.future;
+}
+
+class ImagePainter extends CustomPainter {
+  final ui.Image? image;
+
+  ImagePainter(this.image);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Draw the image on the canvas
+    if (image != null) {
+      canvas.drawImage(
+          image!, Offset.zero, Paint()..filterQuality = ui.FilterQuality.high);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+
+// Rect jsonToRect(Map<String, dynamic> data) {
+//   return Rect.fromLTRB(
+//     data['left'] as double,
+//     data['top'] as double,
+//     data['right'] as double,
+//     data['bottom'] as double,
+//   );
+// }

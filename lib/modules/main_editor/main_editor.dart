@@ -1,5 +1,6 @@
 // Dart imports:
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui show Image;
@@ -2195,6 +2196,19 @@ class ProImageEditorState extends State<ProImageEditor>
                                   ),
                                   onPressed: openQuillEditor,
                                 ),
+                                FlatIconTextButton(
+                                  key:
+                                      const ValueKey('open-text-editor-btn123'),
+                                  label: Text(
+                                      i18n.textEditor.bottomNavigationBarText,
+                                      style: bottomTextStyle),
+                                  icon: Icon(
+                                    icons.textEditor.bottomNavBar,
+                                    size: bottomIconSize,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: openJDPaintingEditor,
+                                ),
                                 if (paintEditorConfigs.enabled)
                                   FlatIconTextButton(
                                     key: const ValueKey(
@@ -2375,6 +2389,8 @@ class ProImageEditorState extends State<ProImageEditor>
                                       ?.call(this, layerItem, i);
                                 } else if (layerItem is QuillDataLayer) {
                                   _onQuillDocumentTap(layerItem);
+                                } else if (layerItem is PaintingDataLayer) {
+                                  _onPaintingTap(layerItem);
                                 }
                               },
                               onTap: (layer) async {
@@ -2391,6 +2407,8 @@ class ProImageEditorState extends State<ProImageEditor>
                                   _onTextLayerTap(layer);
                                 } else if (layer is QuillDataLayer) {
                                   _onQuillDocumentTap(layer);
+                                } else if (layerItem is PaintingDataLayer) {
+                                  _onPaintingTap(layerItem);
                                 }
                               },
                               onTapUp: () {
@@ -2588,5 +2606,49 @@ class ProImageEditorState extends State<ProImageEditor>
         //     ),
         //   ),
         );
+  }
+
+  Future<void> _onPaintingTap(PaintingDataLayer layerData) async {
+    PaintingDataLayer? layer =
+        await widget.callbacks.onPaintingEditorTap?.call(layerData);
+
+    if (layer == null || !mounted) return;
+
+    int i = activeLayers.indexWhere((element) => element.id == layerData.id);
+    if (i >= 0) {
+      _setTempLayer(layerData);
+      PaintingDataLayer paintingDataLayer =
+          activeLayers[i] as PaintingDataLayer;
+      paintingDataLayer
+        ..cropImage = layer.cropImage
+        ..rect = layer.rect
+        ..painting = layer.painting
+        ..id = layerData.id
+        ..flipX = layerData.flipX
+        ..flipY = layerData.flipY
+        ..offset = layerData.offset
+        ..scale = layerData.scale
+        ..rotation = layerData.rotation
+        ..initWidth = layerData.initWidth
+        ..initHeight = layerData.initHeight;
+
+      _updateTempLayer();
+    }
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  void openJDPaintingEditor() async {
+    PaintingDataLayer? layer =
+        await widget.callbacks.onPaintingEditorTap?.call(null);
+
+    if (layer == null || !mounted) return;
+
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
   }
 }

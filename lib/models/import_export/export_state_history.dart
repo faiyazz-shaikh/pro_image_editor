@@ -198,7 +198,9 @@ class ExportStateHistory {
           (_configs.exportText && layer.runtimeType == TextLayerData) ||
           (_configs.exportEmoji && layer.runtimeType == EmojiLayerData) ||
           (_configs.exportQuilDocument &&
-              layer.runtimeType == QuillDataLayer)) {
+              layer.runtimeType == QuillDataLayer) ||
+          (_configs.exportQuilDocument &&
+              layer.runtimeType == PaintingDataLayer)) {
         layers.add(layer.toMap());
       } else if (_configs.exportSticker &&
           layer.runtimeType == StickerLayerData) {

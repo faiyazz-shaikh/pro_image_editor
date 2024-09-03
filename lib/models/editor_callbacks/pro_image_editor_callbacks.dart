@@ -40,6 +40,7 @@ class ProImageEditorCallbacks {
     this.emojiEditorCallbacks,
     this.stickerEditorCallbacks,
     this.onQuillEditorTap,
+    this.onPaintingEditorTap,
   });
 
   /// A callback function that is triggered when the image generation is
@@ -108,4 +109,6 @@ class ProImageEditorCallbacks {
   final StickerEditorCallbacks? stickerEditorCallbacks;
 
   final Future<QuillDataLayer> Function(QuillDataLayer?)? onQuillEditorTap;
+  final Future<PaintingDataLayer> Function(PaintingDataLayer?)?
+      onPaintingEditorTap;
 }
