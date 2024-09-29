@@ -2209,6 +2209,32 @@ class ProImageEditorState extends State<ProImageEditor>
                                   ),
                                   onPressed: openJDPaintingEditor,
                                 ),
+                                FlatIconTextButton(
+                                  key: const ValueKey(
+                                      'open-text-editor-btn1234'),
+                                  label: Text(
+                                      i18n.textEditor.bottomNavigationBarText,
+                                      style: bottomTextStyle),
+                                  icon: Icon(
+                                    icons.textEditor.bottomNavBar,
+                                    size: bottomIconSize,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: openJDImageEditor,
+                                ),
+                                FlatIconTextButton(
+                                  key: const ValueKey(
+                                      'open-text-editor-btn12344'),
+                                  label: Text(
+                                      i18n.textEditor.bottomNavigationBarText,
+                                      style: bottomTextStyle),
+                                  icon: Icon(
+                                    icons.textEditor.bottomNavBar,
+                                    size: bottomIconSize,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: openJDStickerEditor,
+                                ),
                                 if (paintEditorConfigs.enabled)
                                   FlatIconTextButton(
                                     key: const ValueKey(
@@ -2391,6 +2417,10 @@ class ProImageEditorState extends State<ProImageEditor>
                                   _onQuillDocumentTap(layerItem);
                                 } else if (layerItem is PaintingDataLayer) {
                                   _onPaintingTap(layerItem);
+                                } else if (layerItem is JDImageLayerData) {
+                                  _onJDImageTap(layerItem);
+                                } else if (layerItem is JDStickerLayerData) {
+                                  _onJDStickerTap(layerItem);
                                 }
                               },
                               onTap: (layer) async {
@@ -2409,6 +2439,10 @@ class ProImageEditorState extends State<ProImageEditor>
                                   _onQuillDocumentTap(layer);
                                 } else if (layerItem is PaintingDataLayer) {
                                   _onPaintingTap(layerItem);
+                                } else if (layerItem is JDImageLayerData) {
+                                  _onJDImageTap(layerItem);
+                                } else if (layerItem is JDStickerLayerData) {
+                                  _onJDStickerTap(layerItem);
                                 }
                               },
                               onTapUp: () {
@@ -2642,6 +2676,88 @@ class ProImageEditorState extends State<ProImageEditor>
   void openJDPaintingEditor() async {
     PaintingDataLayer? layer =
         await widget.callbacks.onPaintingEditorTap?.call(null);
+
+    if (layer == null || !mounted) return;
+
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  Future<void> _onJDImageTap(JDImageLayerData layerData) async {
+    JDImageLayerData? layer =
+        await widget.callbacks.onJDImageTap?.call(layerData);
+
+    if (layer == null || !mounted) return;
+
+    int i = activeLayers.indexWhere((element) => element.id == layerData.id);
+    if (i >= 0) {
+      _setTempLayer(layerData);
+      JDImageLayerData jdImageLayerData = activeLayers[i] as JDImageLayerData;
+      jdImageLayerData
+        ..imageData = layer.imageData
+        ..id = layerData.id
+        ..flipX = layerData.flipX
+        ..flipY = layerData.flipY
+        ..offset = layerData.offset
+        ..scale = layerData.scale
+        ..rotation = layerData.rotation
+        ..initWidth = layerData.initWidth
+        ..initHeight = layerData.initHeight;
+
+      _updateTempLayer();
+    }
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  void openJDImageEditor() async {
+    JDImageLayerData? layer = await widget.callbacks.onJDImageTap?.call(null);
+
+    if (layer == null || !mounted) return;
+
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  Future<void> _onJDStickerTap(JDStickerLayerData layerData) async {
+    JDStickerLayerData? layer =
+        await widget.callbacks.onJDStickerTap?.call(layerData);
+
+    if (layer == null || !mounted) return;
+
+    int i = activeLayers.indexWhere((element) => element.id == layerData.id);
+    if (i >= 0) {
+      _setTempLayer(layerData);
+      JDStickerLayerData jdStickerLayerData =
+          activeLayers[i] as JDStickerLayerData;
+      jdStickerLayerData
+        ..imageData = layer.imageData
+        ..id = layerData.id
+        ..flipX = layerData.flipX
+        ..flipY = layerData.flipY
+        ..offset = layerData.offset
+        ..scale = layerData.scale
+        ..rotation = layerData.rotation
+        ..initWidth = layerData.initWidth
+        ..initHeight = layerData.initHeight;
+
+      _updateTempLayer();
+    }
+
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  void openJDStickerEditor() async {
+    JDStickerLayerData? layer =
+        await widget.callbacks.onJDStickerTap?.call(null);
 
     if (layer == null || !mounted) return;
 

@@ -31,6 +31,10 @@ class LayerCopyManager {
       /// [JD] Change due to every time changed the variable of cropImage
       /// on reloading
       return (layer);
+    } else if (layer is JDImageLayerData) {
+      return createCopyJDImageLayerData(layer);
+    } else if (layer is JDStickerLayerData) {
+      return createCopyJDStickerLayerData(layer);
     } else {
       return layer;
     }
@@ -130,6 +134,36 @@ class LayerCopyManager {
       initHeight: layer.initHeight,
       rect: layer.rect,
       cropImage: layer.cropImage,
+    );
+  }
+
+  JDImageLayerData createCopyJDImageLayerData(JDImageLayerData layer) {
+    return JDImageLayerData(
+      id: layer.id,
+      imageData: layer.imageData,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+      tempWidget: layer.tempWidget,
+    );
+  }
+
+  JDStickerLayerData createCopyJDStickerLayerData(JDStickerLayerData layer) {
+    return JDStickerLayerData(
+      id: layer.id,
+      imageData: layer.imageData,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+      tempWidget: layer.tempWidget,
     );
   }
 }

@@ -185,7 +185,9 @@ class _LayerInteractionHelperWidgetState
                     widget.callbacks.stickerEditorCallbacks?.onTapEditSticker !=
                         null) ||
                 widget.layerData.runtimeType == QuillDataLayer ||
-                widget.layerData.runtimeType == PaintingDataLayer)
+                widget.layerData.runtimeType == PaintingDataLayer ||
+                widget.layerData.runtimeType == JDImageLayerData ||
+                widget.layerData.runtimeType == JDStickerLayerData)
               Positioned(
                 top: 0,
                 right: 0,

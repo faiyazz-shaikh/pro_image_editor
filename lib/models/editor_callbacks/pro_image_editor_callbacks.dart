@@ -41,6 +41,8 @@ class ProImageEditorCallbacks {
     this.stickerEditorCallbacks,
     this.onQuillEditorTap,
     this.onPaintingEditorTap,
+    this.onJDImageTap,
+    this.onJDStickerTap,
   });
 
   /// A callback function that is triggered when the image generation is
@@ -111,4 +113,9 @@ class ProImageEditorCallbacks {
   final Future<QuillDataLayer> Function(QuillDataLayer?)? onQuillEditorTap;
   final Future<PaintingDataLayer> Function(PaintingDataLayer?)?
       onPaintingEditorTap;
+
+  final Future<JDImageLayerData?> Function(JDImageLayerData?)? onJDImageTap;
+
+  final Future<JDStickerLayerData?> Function(JDStickerLayerData?)?
+      onJDStickerTap;
 }

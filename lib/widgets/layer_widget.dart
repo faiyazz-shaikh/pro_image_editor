@@ -154,6 +154,12 @@ class _LayerWidgetState extends State<LayerWidget>
       case const (PaintingDataLayer):
         _layerType = _LayerType.painting;
         break;
+      case const (JDImageLayerData):
+        _layerType = _LayerType.jdImage;
+        break;
+      case const (JDStickerLayerData):
+        _layerType = _LayerType.jdSticker;
+        break;
       default:
         _layerType = _LayerType.unknown;
         break;
@@ -337,6 +343,10 @@ class _LayerWidgetState extends State<LayerWidget>
         return _buildQuilDocumentLayer();
       case _LayerType.painting:
         return _buildPaintingLayer();
+      case _LayerType.jdImage:
+        return _buildJdImageLayer();
+      case _LayerType.jdSticker:
+        return _buildJdStickerLayer();
       default:
         return const SizedBox.shrink();
     }
@@ -519,10 +529,42 @@ class _LayerWidgetState extends State<LayerWidget>
     }
     return const CircularProgressIndicator();
   }
+
+  Widget _buildJdImageLayer() {
+    var layer = _layer as JDImageLayerData;
+    return SizedBox(
+      width: (layer.initWidth ?? 100) * layer.scale,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: layer.tempWidget,
+      ),
+    );
+  }
+
+  Widget _buildJdStickerLayer() {
+    var layer = _layer as JDStickerLayerData;
+    return SizedBox(
+      width: (layer.initWidth ?? 50) * layer.scale,
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: layer.tempWidget,
+      ),
+    );
+  }
 }
 
 // ignore: camel_case_types
-enum _LayerType { emoji, text, sticker, canvas, unknown, document, painting }
+enum _LayerType {
+  emoji,
+  text,
+  sticker,
+  canvas,
+  unknown,
+  document,
+  painting,
+  jdImage,
+  jdSticker
+}
 
 Future<ui.Image> jsonToImageCrop(Map<String, dynamic> json) async {
   final ByteData newByteData = jsonToByteData(json);

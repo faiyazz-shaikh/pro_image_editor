@@ -200,7 +200,10 @@ class ExportStateHistory {
           (_configs.exportQuilDocument &&
               layer.runtimeType == QuillDataLayer) ||
           (_configs.exportQuilDocument &&
-              layer.runtimeType == PaintingDataLayer)) {
+              layer.runtimeType == PaintingDataLayer) ||
+          (_configs.exportJDImage && layer.runtimeType == JDImageLayerData) ||
+          (_configs.exportJDSticker &&
+              layer.runtimeType == JDStickerLayerData)) {
         layers.add(layer.toMap());
       } else if (_configs.exportSticker &&
           layer.runtimeType == StickerLayerData) {

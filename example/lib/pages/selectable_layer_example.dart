@@ -1,5 +1,10 @@
 // Flutter imports:
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 // Package imports:
 import 'package:pro_image_editor/pro_image_editor.dart';
@@ -52,11 +57,12 @@ class _SelectableLayerExampleState extends State<SelectableLayerExample>
           final result = await Navigator.push<PaintingDataLayer>(
             context,
             MaterialPageRoute(
-              builder: (context) => MyPaintingDataAppPage(),
+              builder: (context) => const MyPaintingDataAppPage(),
             ),
           );
           return result!;
         },
+        onJDImageTap: _openPicker,
       ),
       configs: ProImageEditorConfigs(
         designMode: platformDesignMode,
@@ -105,5 +111,77 @@ class _SelectableLayerExampleState extends State<SelectableLayerExample>
         ),
       ),
     );
+  }
+
+  Future<JDImageLayerData?> _openPicker(JDImageLayerData? source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image == null) return null;
+
+    Uint8List? bytes;
+
+    bytes = await image.readAsBytes();
+
+    if (!mounted) return null;
+    var decodedImage = await decodeImageFromList(bytes);
+
+    if (!mounted) return null;
+
+    final (initWidth, initHeight) = calculateScaledDimensions(
+      originalWidth: decodedImage.width.toDouble(),
+      originalHeight: decodedImage.height.toDouble(),
+      maxWidth: 150,
+      maxHeight: 200,
+    );
+
+    return JDImageLayerData(
+      imageData: base64Encode(bytes),
+      initWidth: initWidth,
+      initHeight: initHeight,
+      tempWidget: Image.memory(
+        bytes,
+        width: initWidth,
+        height: initHeight,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  (double, double) calculateScaledDimensions({
+    required double originalWidth,
+    required double originalHeight,
+    required double maxWidth,
+    required double maxHeight,
+  }) {
+    // If the height is larger than maxHeight, scale down by height
+    if (originalHeight > maxHeight) {
+      double scalingFactor = maxHeight / originalHeight;
+
+      // Scale the width proportionally
+      double newWidth = originalWidth * scalingFactor;
+      double newHeight = originalHeight * scalingFactor;
+
+      // If the new width exceeds maxWidth, scale down further by width
+      if (newWidth > maxWidth) {
+        scalingFactor = maxWidth / newWidth;
+        newWidth = newWidth * scalingFactor;
+        newHeight = newHeight * scalingFactor;
+      }
+
+      return (newWidth, newHeight);
+    }
+
+    // If height is within bounds but width is larger, scale down by width
+    if (originalWidth > maxWidth) {
+      double scalingFactor = maxWidth / originalWidth;
+      double newWidth = originalWidth * scalingFactor;
+      double newHeight = originalHeight * scalingFactor;
+
+      return (newWidth, newHeight);
+    }
+
+    // If neither height nor width needs scaling
+    return (originalWidth, originalHeight);
   }
 }

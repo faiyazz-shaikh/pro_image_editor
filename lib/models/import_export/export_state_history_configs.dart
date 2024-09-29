@@ -16,6 +16,8 @@ class ExportEditorConfigs {
     this.exportEmoji = true,
     this.exportSticker = true,
     this.exportQuilDocument = true,
+    this.exportJDImage = true,
+    this.exportJDSticker = true,
   });
 
   /// The span of the export history to include in the export.
@@ -56,4 +58,8 @@ class ExportEditorConfigs {
   final bool exportSticker;
 
   final bool exportQuilDocument;
+
+  final bool exportJDImage;
+
+  final bool exportJDSticker;
 }

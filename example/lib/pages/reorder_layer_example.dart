@@ -177,7 +177,11 @@ class _ReorderLayerSheetState extends State<ReorderLayerSheet> {
                               ? const Text('Quill Editor')
                               : layer.runtimeType == PaintingDataLayer
                                   ? const Text('Painting Editor')
-                                  : Text(layer.id.toString()),
+                                  : layer.runtimeType == JDImageLayerData
+                                      ? const Text('Image Editor')
+                                      : layer.runtimeType == JDStickerLayerData
+                                          ? const Text('JD Sticker Editor')
+                                          : Text(layer.id.toString()),
         );
       },
       itemCount: widget.layers.length,

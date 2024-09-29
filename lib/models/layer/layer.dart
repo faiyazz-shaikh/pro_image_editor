@@ -1,6 +1,7 @@
 // ignore_for_file: argument_type_not_assignable
 
 // Flutter imports:
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -102,6 +103,12 @@ class Layer {
           initHeight: map['initHeight'],
           initWidth: map['initWidth'],
         );
+
+      case 'JDImage':
+        return JDImageLayerData.fromMap(layer, map);
+
+      case 'JDSticker':
+        return JDStickerLayerData.fromMap(layer, map);
 
       default:
 
@@ -638,6 +645,110 @@ class PaintingDataLayer extends Layer {
       'rect': rect,
       'cropImage': cropImage,
       'type': 'paintingDocument',
+    };
+  }
+}
+
+class JDImageLayerData extends Layer {
+  String imageData;
+  double? initHeight;
+  double? initWidth;
+  Widget tempWidget;
+
+  JDImageLayerData({
+    required this.imageData,
+    this.tempWidget = const SizedBox(),
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  factory JDImageLayerData.fromMap(Layer layer, Map<String, dynamic> map) {
+    /// Constructs and returns a PaintingLayerData instance with properties
+    /// derived from the layer and map.
+    return JDImageLayerData(
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      offset: layer.offset,
+      rotation: layer.rotation,
+      scale: layer.scale,
+      imageData: map['imageData'],
+      initHeight: map['initHeight'],
+      initWidth: map['initWidth'],
+      tempWidget: Image.memory(
+        base64Decode(map['imageData']),
+        width: map['initWidth'],
+        height: map['initHeight'],
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      ...super.toMap(),
+      'imageData': imageData,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'type': 'JDImage',
+    };
+  }
+}
+
+class JDStickerLayerData extends Layer {
+  String imageData;
+  double? initHeight;
+  double? initWidth;
+  Widget tempWidget;
+
+  JDStickerLayerData({
+    required this.imageData,
+    this.tempWidget = const SizedBox(),
+    this.initWidth,
+    this.initHeight,
+    super.offset,
+    super.rotation,
+    super.scale,
+    super.id,
+    super.flipX,
+    super.flipY,
+  });
+
+  factory JDStickerLayerData.fromMap(Layer layer, Map<String, dynamic> map) {
+    /// Constructs and returns a PaintingLayerData instance with properties
+    /// derived from the layer and map.
+    return JDStickerLayerData(
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      offset: layer.offset,
+      rotation: layer.rotation,
+      scale: layer.scale,
+      imageData: map['imageData'],
+      initHeight: map['initHeight'],
+      initWidth: map['initWidth'],
+      tempWidget: Image.memory(
+        base64Decode(map['imageData']),
+        width: map['initWidth'],
+        height: map['initHeight'],
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toMap() {
+    return {
+      ...super.toMap(),
+      'imageData': imageData,
+      'initHeight': initHeight,
+      'initWidth': initWidth,
+      'type': 'JDSticker',
     };
   }
 }
