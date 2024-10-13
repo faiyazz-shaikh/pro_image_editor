@@ -1821,6 +1821,7 @@ class ProImageEditorState extends State<ProImageEditor>
       stateManager.position = stateHistory.length - 1;
     }
 
+    editorImage.byteArray ??= import.imageBytes;
     setState(() {});
     decodeImage(stateManager.transformConfigs);
     mainEditorCallbacks?.handleUpdateUI();
@@ -1848,6 +1849,7 @@ class ProImageEditorState extends State<ProImageEditor>
       contentRecorderCtrl: _controllers.screenshot,
       // ignore: use_build_context_synchronously
       context: context,
+      imageBytes: editorImage.byteArray,
     );
   }
 
@@ -2766,5 +2768,11 @@ class ProImageEditorState extends State<ProImageEditor>
 
     setState(() {});
     mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  /// Change background image
+  void changeBackgroundImage(EditorImage newEditorImage) {
+    editorImage = newEditorImage;
+    setState(() {});
   }
 }

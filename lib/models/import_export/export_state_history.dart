@@ -31,6 +31,7 @@ class ExportStateHistory {
     required this.editorPosition,
     required this.contentRecorderCtrl,
     required this.context,
+    required this.imageBytes,
     ExportEditorConfigs configs = const ExportEditorConfigs(),
   }) : _configs = configs;
 
@@ -83,6 +84,9 @@ class ExportStateHistory {
   /// This [BuildContext] is used for widget building and accessing theme
   /// data within the editor, providing a connection to the widget tree.
   final BuildContext context;
+
+  /// Output image
+  final Uint8List? imageBytes;
 
   /// Converts the state history to a Map.
   ///
@@ -146,6 +150,7 @@ class ExportStateHistory {
         'width': imgSize.width,
         'height': imgSize.height,
       },
+      'jd_background': base64Encode(imageBytes ?? [])
       // [Excluded for journal support]
       // 'imgSize': {
       //   'width': imageInfos.rawSize.width,
