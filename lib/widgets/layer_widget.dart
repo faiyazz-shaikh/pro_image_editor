@@ -8,6 +8,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:pro_image_editor/plugins/defer_pointer/defer_pointer.dart';
 import 'package:pro_image_editor/plugins/rounded_background_text/src/rounded_background_text.dart';
 
 // Project imports:
@@ -255,9 +256,11 @@ class _LayerWidgetState extends State<LayerWidget>
     return Positioned(
       top: offsetY,
       left: offsetX,
-      child: FractionalTranslation(
-        translation: const Offset(-0.5, -0.5),
-        child: _buildPosition(), // Build the widget content
+      child: DeferredPointerHandler(
+        child: FractionalTranslation(
+          translation: const Offset(-0.5, -0.5),
+          child: _buildPosition(),
+        ),
       ),
     );
   }
