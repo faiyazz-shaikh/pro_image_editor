@@ -2418,137 +2418,131 @@ class ProImageEditorState extends State<ProImageEditor>
                         }
                       }
                     : null,
-                child: DeferredPointerHandler(
-                  child: StreamBuilder(
-                      stream: _controllers.uiLayerCtrl.stream,
-                      builder: (context, snapshot) {
-                        return Stack(
-                          children: activeLayers.asMap().entries.map((entry) {
-                            final int i = entry.key;
-                            final Layer layerItem = entry.value;
+                child: StreamBuilder(
+                    stream: _controllers.uiLayerCtrl.stream,
+                    builder: (context, snapshot) {
+                      return Stack(
+                        children: activeLayers.asMap().entries.map((entry) {
+                          final int i = entry.key;
+                          final Layer layerItem = entry.value;
 
-                            return LayerWidget(
-                              key: layerItem.key,
-                              configs: configs,
-                              callbacks: callbacks,
-                              editorCenterX: sizesManager.bodySize.width / 2,
-                              editorCenterY: sizesManager
-                                  .editorCenterY(selectedLayerIndex),
-                              layerData: layerItem,
-                              enableHitDetection:
-                                  layerInteractionManager.enabledHitDetection,
-                              selected:
-                                  layerInteractionManager.selectedLayerId ==
-                                      layerItem.id,
-                              isInteractive: !isSubEditorOpen &&
-                                  configs.isLayerInteractive,
-                              highPerformanceMode: layerInteractionManager
-                                  .freeStyleHighPerformance,
-                              onDuplicateTap: () {
-                                if (!configs.isLayerInteractive) return;
-                                final copyLayer =
-                                    _layerCopyManager.copyLayer(layerItem);
-                                addLayer(
-                                  copyLayer
-                                    ..id = generateUniqueId()
-                                    ..key = GlobalKey()
-                                    ..offset =
-                                        copyLayer.offset + const Offset(20, 20),
+                          return LayerWidget(
+                            key: layerItem.key,
+                            configs: configs,
+                            callbacks: callbacks,
+                            editorCenterX: sizesManager.bodySize.width / 2,
+                            editorCenterY:
+                                sizesManager.editorCenterY(selectedLayerIndex),
+                            layerData: layerItem,
+                            enableHitDetection:
+                                layerInteractionManager.enabledHitDetection,
+                            selected: layerInteractionManager.selectedLayerId ==
+                                layerItem.id,
+                            isInteractive:
+                                !isSubEditorOpen && configs.isLayerInteractive,
+                            highPerformanceMode: layerInteractionManager
+                                .freeStyleHighPerformance,
+                            onDuplicateTap: () {
+                              if (!configs.isLayerInteractive) return;
+                              final copyLayer =
+                                  _layerCopyManager.copyLayer(layerItem);
+                              addLayer(
+                                copyLayer
+                                  ..id = generateUniqueId()
+                                  ..key = GlobalKey()
+                                  ..offset =
+                                      copyLayer.offset + const Offset(20, 20),
+                              );
+                            },
+                            onEditTap: () {
+                              if (!configs.isLayerInteractive) return;
+                              if (layerItem is TextLayerData) {
+                                _onTextLayerTap(layerItem);
+                              } else if (layerItem is StickerLayerData) {
+                                callbacks
+                                    .stickerEditorCallbacks!.onTapEditSticker
+                                    ?.call(this, layerItem, i);
+                              } else if (layerItem is QuillDataLayer) {
+                                _onQuillDocumentTap(layerItem);
+                              }
+                            },
+                            onTap: (layer) async {
+                              if (!configs.isLayerInteractive) return;
+                              if (layerInteractionManager
+                                  .layersAreSelectable(configs)) {
+                                layerInteractionManager.selectedLayerId = layer
+                                            .id ==
+                                        layerInteractionManager.selectedLayerId
+                                    ? ''
+                                    : layer.id;
+                                _checkInteractiveViewer();
+                              } else if (layer is TextLayerData) {
+                                _onTextLayerTap(layer);
+                              } else if (layer is QuillDataLayer) {
+                                _onQuillDocumentTap(layer);
+                              } else if (layerItem is PaintingDataLayer) {
+                                _onPaintingTap(layerItem);
+                              } else if (layerItem is JDImageLayerData) {
+                                _onJDImageTap(layerItem);
+                              } else if (layerItem is JDStickerLayerData) {
+                                _onJDStickerTap(layerItem);
+                              }
+                            },
+                            onTapUp: () {
+                              if (!configs.isLayerInteractive) return;
+                              if (layerInteractionManager.hoverRemoveBtn) {
+                                removeLayer(
+                                  activeLayers.indexWhere(
+                                      (element) => element.id == layerItem.id),
+                                  layer: layerItem,
                                 );
-                              },
-                              onEditTap: () {
-                                if (!configs.isLayerInteractive) return;
-                                if (layerItem is TextLayerData) {
-                                  _onTextLayerTap(layerItem);
-                                } else if (layerItem is StickerLayerData) {
-                                  callbacks
-                                      .stickerEditorCallbacks!.onTapEditSticker
-                                      ?.call(this, layerItem, i);
-                                } else if (layerItem is QuillDataLayer) {
-                                  _onQuillDocumentTap(layerItem);
-                                }
-                              },
-                              onTap: (layer) async {
-                                if (!configs.isLayerInteractive) return;
-                                if (layerInteractionManager
-                                    .layersAreSelectable(configs)) {
-                                  layerInteractionManager.selectedLayerId =
-                                      layer.id ==
-                                              layerInteractionManager
-                                                  .selectedLayerId
-                                          ? ''
-                                          : layer.id;
-                                  _checkInteractiveViewer();
-                                } else if (layer is TextLayerData) {
-                                  _onTextLayerTap(layer);
-                                } else if (layer is QuillDataLayer) {
-                                  _onQuillDocumentTap(layer);
-                                } else if (layerItem is PaintingDataLayer) {
-                                  _onPaintingTap(layerItem);
-                                } else if (layerItem is JDImageLayerData) {
-                                  _onJDImageTap(layerItem);
-                                } else if (layerItem is JDStickerLayerData) {
-                                  _onJDStickerTap(layerItem);
-                                }
-                              },
-                              onTapUp: () {
-                                if (!configs.isLayerInteractive) return;
-                                if (layerInteractionManager.hoverRemoveBtn) {
-                                  removeLayer(
-                                    activeLayers.indexWhere((element) =>
-                                        element.id == layerItem.id),
-                                    layer: layerItem,
-                                  );
-                                }
-                                _controllers.uiLayerCtrl.add(null);
-                                mainEditorCallbacks?.handleUpdateUI();
-                                selectedLayerIndex = -1;
+                              }
+                              _controllers.uiLayerCtrl.add(null);
+                              mainEditorCallbacks?.handleUpdateUI();
+                              selectedLayerIndex = -1;
 
-                                _checkInteractiveViewer();
-                              },
-                              onTapDown: () {
-                                if (!configs.isLayerInteractive) return;
-                                selectedLayerIndex = i;
-                                _setTempLayer(layerItem);
-                                _checkInteractiveViewer();
-                              },
-                              onScaleRotateDown: (details, layerOriginalSize) {
-                                if (!configs.isLayerInteractive) return;
-                                selectedLayerIndex = i;
-                                layerInteractionManager
-                                  ..rotateScaleLayerSizeHelper =
-                                      layerOriginalSize
-                                  ..rotateScaleLayerScaleHelper =
-                                      layerItem.scale;
-                                _checkInteractiveViewer();
-                              },
-                              onScaleRotateUp: (details) {
-                                if (!configs.isLayerInteractive) return;
-                                layerInteractionManager
-                                  ..rotateScaleLayerSizeHelper = null
-                                  ..rotateScaleLayerScaleHelper = null;
-                                setState(() {
-                                  selectedLayerIndex = -1;
-                                });
-                                _checkInteractiveViewer();
-                                mainEditorCallbacks?.handleUpdateUI();
-                              },
-                              onRemoveTap: () {
-                                if (!configs.isLayerInteractive) return;
-                                setState(() {
-                                  removeLayer(
-                                    activeLayers.indexWhere((element) =>
-                                        element.id == layerItem.id),
-                                    layer: layerItem,
-                                  );
-                                });
-                                mainEditorCallbacks?.handleUpdateUI();
-                              },
-                            );
-                          }).toList(),
-                        );
-                      }),
-                ),
+                              _checkInteractiveViewer();
+                            },
+                            onTapDown: () {
+                              if (!configs.isLayerInteractive) return;
+                              selectedLayerIndex = i;
+                              _setTempLayer(layerItem);
+                              _checkInteractiveViewer();
+                            },
+                            onScaleRotateDown: (details, layerOriginalSize) {
+                              if (!configs.isLayerInteractive) return;
+                              selectedLayerIndex = i;
+                              layerInteractionManager
+                                ..rotateScaleLayerSizeHelper = layerOriginalSize
+                                ..rotateScaleLayerScaleHelper = layerItem.scale;
+                              _checkInteractiveViewer();
+                            },
+                            onScaleRotateUp: (details) {
+                              if (!configs.isLayerInteractive) return;
+                              layerInteractionManager
+                                ..rotateScaleLayerSizeHelper = null
+                                ..rotateScaleLayerScaleHelper = null;
+                              setState(() {
+                                selectedLayerIndex = -1;
+                              });
+                              _checkInteractiveViewer();
+                              mainEditorCallbacks?.handleUpdateUI();
+                            },
+                            onRemoveTap: () {
+                              if (!configs.isLayerInteractive) return;
+                              setState(() {
+                                removeLayer(
+                                  activeLayers.indexWhere(
+                                      (element) => element.id == layerItem.id),
+                                  layer: layerItem,
+                                );
+                              });
+                              mainEditorCallbacks?.handleUpdateUI();
+                            },
+                          );
+                        }).toList(),
+                      );
+                    }),
               ),
             );
           }),
