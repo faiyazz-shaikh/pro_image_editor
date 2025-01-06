@@ -1,13 +1,11 @@
 // Dart imports:
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 // Flutter imports:
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
 import 'package:pro_image_editor/plugins/defer_pointer/defer_pointer.dart';
 import 'package:pro_image_editor/plugins/rounded_background_text/src/rounded_background_text.dart';
 
@@ -40,6 +38,7 @@ class LayerWidget extends StatefulWidget with SimpleConfigsAccess {
     this.selected = false,
     this.isInteractive = false,
     this.callbacks = const ProImageEditorCallbacks(),
+    this.contentBuilder,
   });
   @override
   final ProImageEditorConfigs configs;
@@ -123,6 +122,9 @@ class LayerWidget extends StatefulWidget with SimpleConfigsAccess {
 
   /// Indicates whether the layer is interactive.
   final bool isInteractive;
+
+  /// Build custom content widget
+  final Widget Function(Layer)? contentBuilder;
 
   @override
   createState() => _LayerWidgetState();
@@ -323,7 +325,9 @@ class _LayerWidgetState extends State<LayerWidget>
                     child: Padding(
                       padding: EdgeInsets.all(widget.selected ? 7.0 : 0),
                       child: FittedBox(
-                        child: _buildContent(),
+                        child: widget.contentBuilder != null
+                            ? widget.contentBuilder!(_layer)
+                            : _buildContent(),
                       ),
                     ),
                   ),
@@ -348,13 +352,9 @@ class _LayerWidgetState extends State<LayerWidget>
       case _LayerType.canvas:
         return _buildCanvas();
       case _LayerType.document:
-        return _buildQuilDocumentLayer();
       case _LayerType.painting:
-        return _buildPaintingLayer();
       case _LayerType.jdImage:
-        return _buildJdImageLayer();
       case _LayerType.jdSticker:
-        return _buildJdStickerLayer();
       default:
         return const SizedBox.shrink();
     }
@@ -368,48 +368,6 @@ class _LayerWidgetState extends State<LayerWidget>
       textDirection: TextDirection.ltr,
     )..layout();
     return painter.preferredLineHeight;
-  }
-
-  Widget _buildQuilDocumentLayer() {
-    var layer = _layer as QuillDataLayer;
-
-    if (configs.quillWidget != null) {
-      return configs.quillWidget!(layer);
-    }
-
-    final data = layer.document;
-    final json = jsonDecode(data);
-
-    debugPrint('height : ${layer.initHeight}');
-    debugPrint('width : ${layer.initWidth}');
-    debugPrint('scale: ${layer.scale}');
-
-    final controller = QuillController(
-      document: Document.fromJson(json as List),
-      selection: const TextSelection.collapsed(offset: 0),
-    );
-
-    return AbsorbPointer(
-      child: SizeTransition(
-        sizeFactor: AlwaysStoppedAnimation<double>(layer.scale),
-        child: SizedBox(
-          height: layer.initHeight ?? 0,
-          width: (layer.initWidth ?? 0) * layer.scale,
-          child: FittedBox(
-            fit: BoxFit.fitWidth,
-            child: SizedBox(
-              width: layer.initWidth ?? 0,
-              child: QuillEditor.basic(
-                configurations: QuillEditorConfigurations(
-                  controller: controller,
-                  scrollable: false,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   /// Build the text widget
@@ -500,43 +458,6 @@ class _LayerWidgetState extends State<LayerWidget>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildPaintingLayer() {
-    var layer = _layer as PaintingDataLayer;
-    return SizeTransition(
-      sizeFactor: AlwaysStoppedAnimation<double>(_layer.scale),
-      child: SizedBox(
-        width: (layer.initWidth ?? 0) * _layer.scale,
-        height: (layer.initHeight ?? 0),
-        child: FittedBox(
-          fit: BoxFit.fitWidth,
-          child: layer.tempWidget,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildJdImageLayer() {
-    var layer = _layer as JDImageLayerData;
-    return SizedBox(
-      width: (layer.initWidth ?? 100) * layer.scale,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: layer.tempWidget,
-      ),
-    );
-  }
-
-  Widget _buildJdStickerLayer() {
-    var layer = _layer as JDStickerLayerData;
-    return SizedBox(
-      width: (layer.initWidth ?? 50) * layer.scale,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: layer.tempWidget,
       ),
     );
   }

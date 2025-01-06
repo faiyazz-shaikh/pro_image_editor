@@ -662,7 +662,7 @@ class ProImageEditorState extends State<ProImageEditor>
     _checkInteractiveViewer();
     _controllers.uiLayerCtrl.add(null);
 
-    /* 
+    /*
     String selectedLayerId = _layerInteractionManager.selectedLayerId;
     _layerInteractionManager.selectedLayerId = '';
     setState(() {});
@@ -980,6 +980,10 @@ class ProImageEditorState extends State<ProImageEditor>
         ..offset = layerData.offset
         ..scale = layerData.scale
         ..rotation = layerData.rotation
+        ..horizontalMirror = layerData.horizontalMirror
+        ..verticalMirror = layerData.verticalMirror
+        ..transparency = layerData.transparency
+        ..lock = layerData.lock
         ..initWidth = layerData.initWidth
         ..initHeight = layerData.initHeight;
 
@@ -2539,6 +2543,8 @@ class ProImageEditorState extends State<ProImageEditor>
                               });
                               mainEditorCallbacks?.handleUpdateUI();
                             },
+                            contentBuilder:
+                                widget.configs.customWidgets.contentBuilder,
                           );
                         }).toList(),
                       );
@@ -2706,6 +2712,10 @@ class ProImageEditorState extends State<ProImageEditor>
         ..offset = layerData.offset
         ..scale = layerData.scale
         ..rotation = layerData.rotation
+        ..horizontalMirror = layerData.horizontalMirror
+        ..verticalMirror = layerData.verticalMirror
+        ..transparency = layerData.transparency
+        ..lock = layerData.lock
         ..initWidth = layerData.initWidth
         ..initHeight = layerData.initHeight;
 
@@ -2747,6 +2757,10 @@ class ProImageEditorState extends State<ProImageEditor>
         ..offset = layerData.offset
         ..scale = layerData.scale
         ..rotation = layerData.rotation
+        ..horizontalMirror = layerData.horizontalMirror
+        ..verticalMirror = layerData.verticalMirror
+        ..transparency = layerData.transparency
+        ..lock = layerData.lock
         ..initWidth = layerData.initWidth
         ..initHeight = layerData.initHeight;
 
@@ -2788,6 +2802,10 @@ class ProImageEditorState extends State<ProImageEditor>
         ..offset = layerData.offset
         ..scale = layerData.scale
         ..rotation = layerData.rotation
+        ..horizontalMirror = layerData.horizontalMirror
+        ..verticalMirror = layerData.verticalMirror
+        ..transparency = layerData.transparency
+        ..lock = layerData.lock
         ..initWidth = layerData.initWidth
         ..initHeight = layerData.initHeight;
 
@@ -2841,6 +2859,20 @@ class ProImageEditorState extends State<ProImageEditor>
         ..id = generateUniqueId()
         ..key = GlobalKey(),
     );
+  }
+
+  /// Handle Change End
+  void onLayerChangeEnd(Layer? layer) async {
+    if (!layerInteractionManager.hoverRemoveBtn && layer != null) {
+      addHistory();
+
+      List<Layer> oldLayers = stateHistory[stateManager.position - 1].layers;
+      int oldIndex = oldLayers.indexWhere((element) => element.id == layer.id);
+      if (oldIndex >= 0) {
+        oldLayers[oldIndex] = _layerCopyManager.copyLayer(layer);
+      }
+    }
+    setState(() {});
   }
 }
 
