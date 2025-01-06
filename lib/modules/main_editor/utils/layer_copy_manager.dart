@@ -114,6 +114,10 @@ class LayerCopyManager {
       scale: layer.scale,
       flipX: layer.flipX,
       flipY: layer.flipY,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
     );
@@ -128,9 +132,12 @@ class LayerCopyManager {
       scale: layer.scale,
       flipX: layer.flipX,
       flipY: layer.flipY,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
-      tempWidget: layer.tempWidget,
     );
   }
 
@@ -143,9 +150,12 @@ class LayerCopyManager {
       scale: layer.scale,
       flipX: layer.flipX,
       flipY: layer.flipY,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
-      tempWidget: layer.tempWidget,
     );
   }
 
@@ -158,9 +168,12 @@ class LayerCopyManager {
       scale: layer.scale,
       flipX: layer.flipX,
       flipY: layer.flipY,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
-      tempWidget: layer.tempWidget,
     );
   }
 }

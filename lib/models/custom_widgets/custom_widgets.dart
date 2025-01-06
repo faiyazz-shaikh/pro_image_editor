@@ -1,6 +1,7 @@
 // Flutter imports:
 import 'package:flutter/widgets.dart';
 import 'package:pro_image_editor/models/editor_configs/pro_image_editor_configs.dart';
+import 'package:pro_image_editor/models/layer/layer.dart';
 
 export 'custom_widgets_blur_editor.dart';
 export 'custom_widgets_crop_rotate_editor.dart';
@@ -25,6 +26,7 @@ class ImageEditorCustomWidgets {
     this.cropRotateEditor = const CustomWidgetsCropRotateEditor(),
     this.filterEditor = const CustomWidgetsFilterEditor(),
     this.blurEditor = const CustomWidgetsBlurEditor(),
+    this.contentBuilder,
   });
 
   /// The main editor instance.
@@ -111,4 +113,7 @@ class ImageEditorCustomWidgets {
 
   /// Replace the existing CircularProgressIndicator.
   final Widget? circularProgressIndicator;
+
+  /// Build custom content widget
+  final Widget Function(Layer)? contentBuilder;
 }

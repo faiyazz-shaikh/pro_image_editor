@@ -30,6 +30,10 @@ class Layer {
     double? scale,
     bool? flipX,
     bool? flipY,
+    bool? horizontalMirror,
+    bool? verticalMirror,
+    double? transparency,
+    bool? lock,
   }) {
     key = GlobalKey();
     // Initialize properties with provided values or defaults.
@@ -39,6 +43,10 @@ class Layer {
     this.scale = scale ?? 1;
     this.flipX = flipX ?? false;
     this.flipY = flipY ?? false;
+    this.horizontalMirror = horizontalMirror ?? false;
+    this.verticalMirror = verticalMirror ?? false;
+    this.transparency = transparency ?? 1;
+    this.lock = lock ?? false;
   }
 
   /// Factory constructor for creating a Layer instance from a map and a list
@@ -54,6 +62,10 @@ class Layer {
       offset: Offset(map['x'] ?? 0, map['y'] ?? 0),
       rotation: map['rotation'] ?? 0,
       scale: map['scale'] ?? 1,
+      horizontalMirror: map['horizontalMirror'] ?? false,
+      verticalMirror: map['verticalMirror'] ?? false,
+      transparency: map['transparency'] ?? 1,
+      lock: map['lock'] ?? false,
     );
 
     /// Determines the layer type from the map and returns the appropriate
@@ -84,6 +96,10 @@ class Layer {
           offset: layer.offset,
           rotation: layer.rotation,
           scale: layer.scale,
+          horizontalMirror: layer.horizontalMirror,
+          verticalMirror: layer.verticalMirror,
+          transparency: layer.transparency,
+          lock: layer.lock,
           document: map['document'],
           initHeight: map['initHeight'],
           initWidth: map['initWidth'],
@@ -121,6 +137,18 @@ class Layer {
   /// A unique identifier for the layer.
   late String id;
 
+  /// Horizontal mirror of view
+  late bool horizontalMirror;
+
+  /// Vertical mirror of view
+  late bool verticalMirror;
+
+  /// Opacity of the view
+  late double transparency;
+
+  /// To check View is locked
+  late bool lock;
+
   /// Converts this transform object to a Map.
   ///
   /// Returns a Map representing the properties of this layer object,
@@ -135,6 +163,10 @@ class Layer {
       'scale': scale,
       'flipX': flipX,
       'flipY': flipY,
+      'horizontalMirror': horizontalMirror,
+      'verticalMirror': verticalMirror,
+      'transparency': transparency,
+      'lock': lock,
       'type': 'default',
     };
   }
@@ -588,6 +620,10 @@ class QuillDataLayer extends Layer {
     super.id,
     super.flipX,
     super.flipY,
+    super.horizontalMirror,
+    super.verticalMirror,
+    super.transparency,
+    super.lock,
   });
 
   @override
@@ -606,11 +642,9 @@ class PaintingDataLayer extends Layer {
   String? painting;
   double? initHeight;
   double? initWidth;
-  Widget tempWidget;
 
   PaintingDataLayer({
     required this.painting,
-    this.tempWidget = const SizedBox(),
     this.initWidth,
     this.initHeight,
     super.offset,
@@ -619,6 +653,10 @@ class PaintingDataLayer extends Layer {
     super.id,
     super.flipX,
     super.flipY,
+    super.horizontalMirror,
+    super.verticalMirror,
+    super.transparency,
+    super.lock,
   });
 
   factory PaintingDataLayer.fromMap(Layer layer, Map<String, dynamic> map) {
@@ -631,15 +669,13 @@ class PaintingDataLayer extends Layer {
       offset: layer.offset,
       rotation: layer.rotation,
       scale: layer.scale,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
       painting: map['painting'],
       initHeight: map['initHeight'],
       initWidth: map['initWidth'],
-      tempWidget: Image.file(
-        File(map['painting']),
-        width: map['initWidth'],
-        height: map['initHeight'],
-        fit: BoxFit.cover,
-      ),
     );
   }
 
@@ -659,11 +695,9 @@ class JDImageLayerData extends Layer {
   String image;
   double? initHeight;
   double? initWidth;
-  Widget tempWidget;
 
   JDImageLayerData({
     required this.image,
-    this.tempWidget = const SizedBox(),
     this.initWidth,
     this.initHeight,
     super.offset,
@@ -672,6 +706,10 @@ class JDImageLayerData extends Layer {
     super.id,
     super.flipX,
     super.flipY,
+    super.horizontalMirror,
+    super.verticalMirror,
+    super.transparency,
+    super.lock,
   });
 
   factory JDImageLayerData.fromMap(Layer layer, Map<String, dynamic> map) {
@@ -684,15 +722,13 @@ class JDImageLayerData extends Layer {
       offset: layer.offset,
       rotation: layer.rotation,
       scale: layer.scale,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
       image: map['image'],
       initHeight: map['initHeight'],
       initWidth: map['initWidth'],
-      tempWidget: Image.file(
-        File(map['image']),
-        width: map['initWidth'],
-        height: map['initHeight'],
-        fit: BoxFit.cover,
-      ),
     );
   }
 
@@ -712,11 +748,9 @@ class JDStickerLayerData extends Layer {
   String sticker;
   double? initHeight;
   double? initWidth;
-  Widget tempWidget;
 
   JDStickerLayerData({
     required this.sticker,
-    this.tempWidget = const SizedBox(),
     this.initWidth,
     this.initHeight,
     super.offset,
@@ -725,6 +759,10 @@ class JDStickerLayerData extends Layer {
     super.id,
     super.flipX,
     super.flipY,
+    super.horizontalMirror,
+    super.verticalMirror,
+    super.transparency,
+    super.lock,
   });
 
   factory JDStickerLayerData.fromMap(Layer layer, Map<String, dynamic> map) {
@@ -737,15 +775,13 @@ class JDStickerLayerData extends Layer {
       offset: layer.offset,
       rotation: layer.rotation,
       scale: layer.scale,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
       sticker: map['sticker'],
       initHeight: map['initHeight'],
       initWidth: map['initWidth'],
-      tempWidget: Image.file(
-        File(map['sticker']),
-        width: map['initWidth'],
-        height: map['initHeight'],
-        fit: BoxFit.cover,
-      ),
     );
   }
 
