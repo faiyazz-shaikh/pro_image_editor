@@ -172,6 +172,8 @@ class ExtendedInteractiveViewerState extends State<ExtendedInteractiveViewer> {
     );
   }
 
+  TransformationController get transformCtrl => _transformCtrl;
+
   @override
   Widget build(BuildContext context) {
     if (!widget.enableZoom) return widget.child;

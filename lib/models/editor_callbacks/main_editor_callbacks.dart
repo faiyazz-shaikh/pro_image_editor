@@ -25,6 +25,7 @@ class MainEditorCallbacks extends StandaloneEditorCallbacks {
     this.onEditorZoomScaleStart,
     this.onEditorZoomScaleUpdate,
     this.onEditorZoomScaleEnd,
+    this.onJDUpdate,
     super.onInit,
     super.onAfterViewInit,
     super.onUpdateUI,
@@ -70,6 +71,9 @@ class MainEditorCallbacks extends StandaloneEditorCallbacks {
   /// A callback function that is triggered when the user `longPress`
   /// on the body.
   final Function()? onLongPress;
+
+  /// onJDUpdate
+  final Function()? onJDUpdate;
 
   /// A callback function that is triggered when a scaling gesture starts.
   ///
