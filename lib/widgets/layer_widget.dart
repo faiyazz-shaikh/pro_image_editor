@@ -1,8 +1,5 @@
-// Dart imports:
-import 'dart:async';
+// Dart imports:;
 import 'dart:math';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 // Flutter imports:
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -474,51 +471,4 @@ enum _LayerType {
   painting,
   jdImage,
   jdSticker
-}
-
-Future<ByteData> jsonToImageCrop2(Map<String, dynamic> json) async {
-  final ByteData newByteData = jsonToByteData(json);
-
-  return newByteData;
-}
-
-Future<ui.Image> jsonToImageCrop(Map<String, dynamic> json) async {
-  final ByteData newByteData = jsonToByteData(json);
-
-  // Step 4: Convert byte data back to image
-  final ui.Image newImage = await byteDataToImage(newByteData);
-  return newImage;
-}
-
-ByteData jsonToByteData(Map<String, dynamic> json) {
-  print(json);
-  final List<int> data = List<int>.from(json['data'] as List);
-  print(data);
-  return ByteData.view(Uint8List.fromList(data).buffer);
-}
-
-Future<ui.Image> byteDataToImage(ByteData byteData) async {
-  final Completer<ui.Image> completer = Completer();
-  ui.decodeImageFromList(byteData.buffer.asUint8List(), completer.complete);
-  return completer.future;
-}
-
-class ImagePainter extends CustomPainter {
-  final ui.Image? image;
-
-  ImagePainter(this.image);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Draw the image on the canvas
-    if (image != null) {
-      canvas.drawImage(
-          image!, Offset.zero, Paint()..filterQuality = ui.FilterQuality.high);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return false;
-  }
 }

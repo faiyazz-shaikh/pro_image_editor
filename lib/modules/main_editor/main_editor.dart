@@ -617,6 +617,7 @@ class ProImageEditorState extends State<ProImageEditor>
         layerInteractionManager.selectedLayerId = layer.id;
         _controllers.uiLayerCtrl.add(null);
         _checkInteractiveViewer();
+        mainEditorCallbacks?.onJDUpdate?.call();
       });
     }
     mainEditorCallbacks?.handleAddLayer(layer);
@@ -661,6 +662,7 @@ class ProImageEditorState extends State<ProImageEditor>
     layerInteractionManager.selectedLayerId = '';
     _checkInteractiveViewer();
     _controllers.uiLayerCtrl.add(null);
+    mainEditorCallbacks?.onJDUpdate?.call();
 
     /*
     String selectedLayerId = _layerInteractionManager.selectedLayerId;
@@ -767,6 +769,8 @@ class ProImageEditorState extends State<ProImageEditor>
 
     var layer = activeLayers[selectedLayerIndex];
 
+    if (layer.lock) return;
+
     if (layerInteractionManager.selectedLayerId != layer.id) {
       layerInteractionManager.selectedLayerId = '';
       _checkInteractiveViewer();
@@ -825,7 +829,7 @@ class ProImageEditorState extends State<ProImageEditor>
       }
     }
 
-    if (_activeLayer == null) return;
+    if (_activeLayer == null || (_activeLayer?.lock ?? false)) return;
 
     if (layerInteractionManager.rotateScaleLayerSizeHelper != null) {
       layerInteractionManager
@@ -1500,6 +1504,7 @@ class ProImageEditorState extends State<ProImageEditor>
         stateManager.position--;
         decodeImage();
       });
+      mainEditorCallbacks?.onJDUpdate?.call();
       mainEditorCallbacks?.handleUndo();
     }
   }
@@ -1519,6 +1524,7 @@ class ProImageEditorState extends State<ProImageEditor>
         stateManager.position++;
         decodeImage();
       });
+      mainEditorCallbacks?.onJDUpdate?.call();
       mainEditorCallbacks?.handleRedo();
     }
   }
@@ -2479,6 +2485,7 @@ class ProImageEditorState extends State<ProImageEditor>
                                         layerInteractionManager.selectedLayerId
                                     ? ''
                                     : layer.id;
+                                mainEditorCallbacks?.onJDUpdate?.call();
                                 _checkInteractiveViewer();
                               } else if (layer is TextLayerData) {
                                 _onTextLayerTap(layer);
@@ -2508,6 +2515,7 @@ class ProImageEditorState extends State<ProImageEditor>
                               _checkInteractiveViewer();
                             },
                             onTapDown: () {
+                              if (layerItem.lock) return;
                               if (!configs.isLayerInteractive) return;
                               selectedLayerIndex = i;
                               _setTempLayer(layerItem);
@@ -2841,6 +2849,7 @@ class ProImageEditorState extends State<ProImageEditor>
       layerInteractionManager.selectedLayerId = '';
       _checkInteractiveViewer();
     });
+    mainEditorCallbacks?.onJDUpdate?.call();
   }
 
   /// Duplicate layer
@@ -2874,72 +2883,25 @@ class ProImageEditorState extends State<ProImageEditor>
     }
     setState(() {});
   }
-}
 
-Size getMax9by16Size(double width, double height) {
-  // Define the target 9:16 ratio
-  const targetAspectRatio = 9.0 / 16.0;
+  /// Add new layer
+  void addNewLayer(Layer layer) async {
+    if (!mounted) return;
 
-  // Calculate the width based on the 9:16 aspect ratio
-  double targetWidth = height * targetAspectRatio;
+    addLayer(layer, blockSelectLayer: true);
+    _selectLayerAfterHeroIsDone(layer.id);
 
-  // If the target width exceeds the given width, scale based on width instead
-  if (targetWidth > width) {
-    double targetHeight = width / targetAspectRatio;
-    return Size(width, targetHeight);
+    setState(() {});
+    mainEditorCallbacks?.handleUpdateUI();
   }
 
-  // Otherwise, use the target width and given height
-  return Size(targetWidth, height);
-}
+  /// scaleFactor
+  double? get scaleFactor => _interactiveViewer.currentState?.scaleFactor;
 
-Size getBestFitSize(double width, double height) {
-  // Define aspect ratios for mobile and tablet
-  const mobileAspectRatio = 9.0 / 16.0;
-  const tabletAspectRatio = 3.0 / 4.0;
-  const squareAspectRatio = 1.0; // 1:1 for square
+  ///
+  Offset? get zoomOffset => _interactiveViewer.currentState?.offset;
 
-  // Calculate sizes for each aspect ratio
-  double mobileHeight = width / mobileAspectRatio;
-  double tabletHeight = width / tabletAspectRatio;
-  double squareSize = width > height ? height : width;
-
-  if (mobileHeight <= height) {
-    // Use 9:16 if it fits within the provided dimensions
-    return Size(width, mobileHeight);
-  } else if (tabletHeight <= height) {
-    // Use 3:4 if it fits within the provided dimensions
-    return Size(width, tabletHeight);
-  } else {
-    // Use 1:1 square ratio as a fallback
-    return Size(squareSize, squareSize);
-  }
-}
-
-Size getBestFitWithoutScrolling(double width, double height) {
-  // Define the target aspect ratios for mobile and tablet
-  const mobileAspectRatio = 9.0 / 16.0;
-  const tabletAspectRatio = 3.0 / 4.0;
-
-  // Calculate the initial aspect ratio of the provided dimensions
-  double initialAspectRatio = width / height;
-
-  // Choose aspect ratio based on initial dimensions (portrait or landscape)
-  double targetAspectRatio =
-      (initialAspectRatio < 0.75) ? mobileAspectRatio : tabletAspectRatio;
-
-  // Calculate target width and height while ensuring they do not exceed provided dimensions
-  if (initialAspectRatio > targetAspectRatio) {
-    // Fit to height if initial aspect is wider
-    double targetWidth = height * targetAspectRatio;
-    return targetWidth > width
-        ? Size(width, width / targetAspectRatio)
-        : Size(targetWidth, height);
-  } else {
-    // Fit to width otherwise
-    double targetHeight = width / targetAspectRatio;
-    return targetHeight > height
-        ? Size(height * targetAspectRatio, height)
-        : Size(width, targetHeight);
-  }
+  ///
+  TransformationController? get transformCtrl =>
+      _interactiveViewer.currentState?.transformCtrl;
 }

@@ -167,80 +167,86 @@ class _LayerInteractionHelperWidgetState
                 child: widget.child,
               ),
             ),
-            Positioned(
-              top: 0,
-              left: 0,
-              child: LayerInteractionButton(
-                toggleTooltipVisibility: (val) =>
-                    setState(() => _tooltipVisible = val),
-                rotation: -widget.layerData.rotation,
-                onTap: widget.onRemoveLayer,
-                buttonRadius: imageEditorTheme.layerInteraction.buttonRadius,
-                cursor: imageEditorTheme.layerInteraction.removeCursor,
-                icon: icons.layerInteraction.remove,
-                tooltip: i18n.layerInteraction.remove,
-                color: imageEditorTheme.layerInteraction.buttonRemoveColor,
-                background:
-                    imageEditorTheme.layerInteraction.buttonRemoveBackground,
-              ),
-            ),
-            if (widget.layerData.runtimeType == TextLayerData ||
-                (widget.layerData.runtimeType == StickerLayerData &&
-                    widget.callbacks.stickerEditorCallbacks?.onTapEditSticker !=
-                        null) ||
-                widget.layerData.runtimeType == QuillDataLayer)
+            if (!widget.layerData.lock) ...[
               Positioned(
                 top: 0,
+                left: 0,
+                child: LayerInteractionButton(
+                  toggleTooltipVisibility: (val) =>
+                      setState(() => _tooltipVisible = val),
+                  rotation: -widget.layerData.rotation,
+                  onTap: widget.onRemoveLayer,
+                  buttonRadius: imageEditorTheme.layerInteraction.buttonRadius,
+                  cursor: imageEditorTheme.layerInteraction.removeCursor,
+                  icon: icons.layerInteraction.remove,
+                  tooltip: i18n.layerInteraction.remove,
+                  color: imageEditorTheme.layerInteraction.buttonRemoveColor,
+                  background:
+                      imageEditorTheme.layerInteraction.buttonRemoveBackground,
+                ),
+              ),
+              if (widget.layerData.runtimeType == TextLayerData ||
+                  (widget.layerData.runtimeType == StickerLayerData &&
+                      widget.callbacks.stickerEditorCallbacks
+                              ?.onTapEditSticker !=
+                          null) ||
+                  widget.layerData.runtimeType == QuillDataLayer)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: LayerInteractionButton(
+                    toggleTooltipVisibility: (val) =>
+                        setState(() => _tooltipVisible = val),
+                    rotation: -widget.layerData.rotation,
+                    onTap: widget.onEditLayer,
+                    buttonRadius:
+                        imageEditorTheme.layerInteraction.buttonRadius,
+                    cursor: imageEditorTheme.layerInteraction.editCursor,
+                    icon: icons.layerInteraction.edit,
+                    tooltip: i18n.layerInteraction.edit,
+                    color:
+                        imageEditorTheme.layerInteraction.buttonEditTextColor,
+                    background: imageEditorTheme
+                        .layerInteraction.buttonEditTextBackground,
+                  ),
+                ),
+              Positioned(
+                bottom: 0,
                 right: 0,
                 child: LayerInteractionButton(
                   toggleTooltipVisibility: (val) =>
                       setState(() => _tooltipVisible = val),
                   rotation: -widget.layerData.rotation,
-                  onTap: widget.onEditLayer,
+                  onScaleRotateDown: widget.onScaleRotateDown,
+                  onScaleRotateUp: widget.onScaleRotateUp,
                   buttonRadius: imageEditorTheme.layerInteraction.buttonRadius,
-                  cursor: imageEditorTheme.layerInteraction.editCursor,
-                  icon: icons.layerInteraction.edit,
-                  tooltip: i18n.layerInteraction.edit,
-                  color: imageEditorTheme.layerInteraction.buttonEditTextColor,
+                  cursor: imageEditorTheme.layerInteraction.rotateScaleCursor,
+                  icon: icons.layerInteraction.rotateScale,
+                  tooltip: i18n.layerInteraction.rotateScale,
+                  color:
+                      imageEditorTheme.layerInteraction.buttonScaleRotateColor,
                   background: imageEditorTheme
-                      .layerInteraction.buttonEditTextBackground,
+                      .layerInteraction.buttonScaleRotateBackground,
                 ),
               ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: LayerInteractionButton(
-                toggleTooltipVisibility: (val) =>
-                    setState(() => _tooltipVisible = val),
-                rotation: -widget.layerData.rotation,
-                onScaleRotateDown: widget.onScaleRotateDown,
-                onScaleRotateUp: widget.onScaleRotateUp,
-                buttonRadius: imageEditorTheme.layerInteraction.buttonRadius,
-                cursor: imageEditorTheme.layerInteraction.rotateScaleCursor,
-                icon: icons.layerInteraction.rotateScale,
-                tooltip: i18n.layerInteraction.rotateScale,
-                color: imageEditorTheme.layerInteraction.buttonScaleRotateColor,
-                background: imageEditorTheme
-                    .layerInteraction.buttonScaleRotateBackground,
+              Positioned(
+                bottom: 0,
+                left: 0,
+                child: LayerInteractionButton(
+                  toggleTooltipVisibility: (val) =>
+                      setState(() => _tooltipVisible = val),
+                  rotation: -widget.layerData.rotation,
+                  onTap: widget.onDuplicateLayer,
+                  buttonRadius: imageEditorTheme.layerInteraction.buttonRadius,
+                  cursor: imageEditorTheme.layerInteraction.duplicateCursor,
+                  icon: icons.layerInteraction.duplicate,
+                  tooltip: i18n.layerInteraction.duplicate,
+                  color: imageEditorTheme.layerInteraction.buttonDuplicateColor,
+                  background: imageEditorTheme
+                      .layerInteraction.buttonDuplicateBackground,
+                ),
               ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              child: LayerInteractionButton(
-                toggleTooltipVisibility: (val) =>
-                    setState(() => _tooltipVisible = val),
-                rotation: -widget.layerData.rotation,
-                onTap: widget.onDuplicateLayer,
-                buttonRadius: imageEditorTheme.layerInteraction.buttonRadius,
-                cursor: imageEditorTheme.layerInteraction.duplicateCursor,
-                icon: icons.layerInteraction.duplicate,
-                tooltip: i18n.layerInteraction.duplicate,
-                color: imageEditorTheme.layerInteraction.buttonDuplicateColor,
-                background:
-                    imageEditorTheme.layerInteraction.buttonDuplicateBackground,
-              ),
-            ),
+            ]
           ],
         ),
       ),
