@@ -118,6 +118,7 @@ class LayerCopyManager {
       verticalMirror: layer.verticalMirror,
       transparency: layer.transparency,
       lock: layer.lock,
+      hyperLink: layer.hyperLink,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
     );
@@ -136,6 +137,7 @@ class LayerCopyManager {
       verticalMirror: layer.verticalMirror,
       transparency: layer.transparency,
       lock: layer.lock,
+      hyperLink: layer.hyperLink,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
     );
@@ -154,6 +156,7 @@ class LayerCopyManager {
       verticalMirror: layer.verticalMirror,
       transparency: layer.transparency,
       lock: layer.lock,
+      hyperLink: layer.hyperLink,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
     );
@@ -172,6 +175,7 @@ class LayerCopyManager {
       verticalMirror: layer.verticalMirror,
       transparency: layer.transparency,
       lock: layer.lock,
+      hyperLink: layer.hyperLink,
       initWidth: layer.initWidth,
       initHeight: layer.initHeight,
     );

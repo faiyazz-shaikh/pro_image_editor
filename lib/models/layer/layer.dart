@@ -34,6 +34,7 @@ class Layer {
     bool? verticalMirror,
     double? transparency,
     bool? lock,
+    this.hyperLink,
   }) {
     key = GlobalKey();
     // Initialize properties with provided values or defaults.
@@ -66,6 +67,7 @@ class Layer {
       verticalMirror: map['verticalMirror'] ?? false,
       transparency: map['transparency'] ?? 1,
       lock: map['lock'] ?? false,
+      hyperLink: map['hyperLink'],
     );
 
     /// Determines the layer type from the map and returns the appropriate
@@ -100,6 +102,7 @@ class Layer {
           verticalMirror: layer.verticalMirror,
           transparency: layer.transparency,
           lock: layer.lock,
+          hyperLink: layer.hyperLink,
           document: map['document'],
           initHeight: map['initHeight'],
           initWidth: map['initWidth'],
@@ -149,6 +152,9 @@ class Layer {
   /// To check View is locked
   late bool lock;
 
+  ///
+  String? hyperLink;
+
   /// Converts this transform object to a Map.
   ///
   /// Returns a Map representing the properties of this layer object,
@@ -167,6 +173,7 @@ class Layer {
       'verticalMirror': verticalMirror,
       'transparency': transparency,
       'lock': lock,
+      'hyperLink': hyperLink,
       'type': 'default',
     };
   }
@@ -605,11 +612,18 @@ class StickerLayerData extends Layer {
   }
 }
 
+///
 class QuillDataLayer extends Layer {
+  ///
   String document;
+
+  ///
   double? initHeight;
+
+  ///
   double? initWidth;
 
+  ///
   QuillDataLayer({
     required this.document,
     this.initWidth,
@@ -624,6 +638,7 @@ class QuillDataLayer extends Layer {
     super.verticalMirror,
     super.transparency,
     super.lock,
+    super.hyperLink,
   });
 
   @override
@@ -657,6 +672,7 @@ class PaintingDataLayer extends Layer {
     super.verticalMirror,
     super.transparency,
     super.lock,
+    super.hyperLink,
   });
 
   factory PaintingDataLayer.fromMap(Layer layer, Map<String, dynamic> map) {
@@ -673,6 +689,7 @@ class PaintingDataLayer extends Layer {
       verticalMirror: layer.verticalMirror,
       transparency: layer.transparency,
       lock: layer.lock,
+      hyperLink: layer.hyperLink,
       painting: map['painting'],
       initHeight: map['initHeight'],
       initWidth: map['initWidth'],
@@ -710,6 +727,7 @@ class JDImageLayerData extends Layer {
     super.verticalMirror,
     super.transparency,
     super.lock,
+    super.hyperLink,
   });
 
   factory JDImageLayerData.fromMap(Layer layer, Map<String, dynamic> map) {
@@ -726,6 +744,7 @@ class JDImageLayerData extends Layer {
       verticalMirror: layer.verticalMirror,
       transparency: layer.transparency,
       lock: layer.lock,
+      hyperLink: layer.hyperLink,
       image: map['image'],
       initHeight: map['initHeight'],
       initWidth: map['initWidth'],
@@ -763,6 +782,7 @@ class JDStickerLayerData extends Layer {
     super.verticalMirror,
     super.transparency,
     super.lock,
+    super.hyperLink,
   });
 
   factory JDStickerLayerData.fromMap(Layer layer, Map<String, dynamic> map) {
@@ -779,6 +799,7 @@ class JDStickerLayerData extends Layer {
       verticalMirror: layer.verticalMirror,
       transparency: layer.transparency,
       lock: layer.lock,
+      hyperLink: layer.hyperLink,
       sticker: map['sticker'],
       initHeight: map['initHeight'],
       initWidth: map['initWidth'],
