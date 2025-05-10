@@ -988,6 +988,7 @@ class ProImageEditorState extends State<ProImageEditor>
         ..verticalMirror = layerData.verticalMirror
         ..transparency = layerData.transparency
         ..lock = layerData.lock
+        ..hyperLink = layerData.hyperLink
         ..initWidth = layerData.initWidth
         ..initHeight = layerData.initHeight;
 
@@ -2724,6 +2725,7 @@ class ProImageEditorState extends State<ProImageEditor>
         ..verticalMirror = layerData.verticalMirror
         ..transparency = layerData.transparency
         ..lock = layerData.lock
+        ..hyperLink = layerData.hyperLink
         ..initWidth = layerData.initWidth
         ..initHeight = layerData.initHeight;
 
@@ -2769,6 +2771,7 @@ class ProImageEditorState extends State<ProImageEditor>
         ..verticalMirror = layerData.verticalMirror
         ..transparency = layerData.transparency
         ..lock = layerData.lock
+        ..hyperLink = layerData.hyperLink
         ..initWidth = layerData.initWidth
         ..initHeight = layerData.initHeight;
 
@@ -2814,6 +2817,7 @@ class ProImageEditorState extends State<ProImageEditor>
         ..verticalMirror = layerData.verticalMirror
         ..transparency = layerData.transparency
         ..lock = layerData.lock
+        ..hyperLink = layerData.hyperLink
         ..initWidth = layerData.initWidth
         ..initHeight = layerData.initHeight;
 
