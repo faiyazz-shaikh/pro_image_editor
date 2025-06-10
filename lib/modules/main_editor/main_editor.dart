@@ -847,7 +847,7 @@ class ProImageEditorState extends State<ProImageEditor>
           editorScaleOffset:
               _interactiveViewer.currentState?.offset ?? Offset.zero,
         );
-      _activeLayer!.key.currentState!.setState(() {});
+      _activeLayer?.key.currentState?.setState(() {});
       checkUpdateHelperLineUI();
       return;
     }
