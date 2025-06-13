@@ -883,6 +883,9 @@ class CropRotateEditorState extends State<CropRotateEditor>
   void _setCropRectBounding({
     double? oldScaleAnimationValue,
   }) {
+    if (cropRect.isEmpty) {
+      return;
+    }
     if (!_renderedImgSize.isInfinite) {
       bool fitToWidth =
           (cropRect.width + _cropSpaceHorizontal) > _renderedImgSize.width;
@@ -926,6 +929,9 @@ class CropRotateEditorState extends State<CropRotateEditor>
         translate.dx * scaleFactor,
         translate.dy * scaleFactor,
       );
+      if (translate.dx.isNaN || translate.dx.isInfinite) {
+        throw ArgumentError('Hmmm');
+      }
       _setOffsetLimits();
     }
   }
