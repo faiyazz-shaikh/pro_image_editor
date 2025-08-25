@@ -2067,12 +2067,45 @@ class ProImageEditorState extends State<ProImageEditor>
           onScaleStart: _onScaleStart,
           onScaleUpdate: _onScaleUpdate,
           onScaleEnd: _onScaleEnd,
-          child: customWidgets.mainEditor.wrapBody?.call(
-                this,
-                _rebuildController.stream,
-                _buildInteractiveContent(),
-              ) ??
-              _buildInteractiveContent(),
+          child: Stack(
+            children: [
+              ExtendedInteractiveViewer(
+                key: _interactiveViewer,
+                // ignore: deprecated_member_use_from_same_package
+                enableZoom: mainEditorConfigs.editorIsZoomable ??
+                    mainEditorConfigs.enableZoom,
+                minScale: mainEditorConfigs.editorMinScale,
+                maxScale: mainEditorConfigs.editorMaxScale,
+                onInteractionStart: (details) {
+                  callbacks.mainEditorCallbacks?.onEditorZoomScaleStart
+                      ?.call(details);
+                  layerInteractionManager.freeStyleHighPerformanceEditorZoom =
+                      (paintEditorConfigs.freeStyleHighPerformanceMoving ??
+                              !isDesktop) ||
+                          (paintEditorConfigs.freeStyleHighPerformanceScaling ??
+                              !isDesktop);
+
+                  _controllers.uiLayerCtrl.add(null);
+                },
+                onInteractionUpdate:
+                    callbacks.mainEditorCallbacks?.onEditorZoomScaleUpdate,
+                onInteractionEnd: (details) {
+                  callbacks.mainEditorCallbacks?.onEditorZoomScaleEnd
+                      ?.call(details);
+                  layerInteractionManager.freeStyleHighPerformanceEditorZoom =
+                      false;
+                  _controllers.uiLayerCtrl.add(null);
+                },
+                child: customWidgets.mainEditor.wrapBody?.call(
+                      this,
+                      _rebuildController.stream,
+                      _buildInteractiveContent(),
+                    ) ??
+                    _buildInteractiveContent(),
+              ),
+              customWidgets.mainEditor.stickyHeader ?? const SizedBox.shrink(),
+            ],
+          ),
         ),
       );
     });
@@ -2097,78 +2130,49 @@ class ProImageEditorState extends State<ProImageEditor>
                         bottom: sizesManager.bottomBarHeight,
                       )
                     : EdgeInsets.zero,
-                child: ExtendedInteractiveViewer(
-                  key: _interactiveViewer,
-                  // ignore: deprecated_member_use_from_same_package
-                  enableZoom: mainEditorConfigs.editorIsZoomable ??
-                      mainEditorConfigs.enableZoom,
-                  minScale: mainEditorConfigs.editorMinScale,
-                  maxScale: mainEditorConfigs.editorMaxScale,
-                  onInteractionStart: (details) {
-                    callbacks.mainEditorCallbacks?.onEditorZoomScaleStart
-                        ?.call(details);
-                    layerInteractionManager.freeStyleHighPerformanceEditorZoom =
-                        (paintEditorConfigs.freeStyleHighPerformanceMoving ??
-                                !isDesktop) ||
-                            (paintEditorConfigs
-                                    .freeStyleHighPerformanceScaling ??
-                                !isDesktop);
+                child: ContentRecorder(
+                  key: const ValueKey('main-editor-content-recorder'),
+                  autoDestroyController: false,
+                  controller: _controllers.screenshot,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    fit: StackFit.expand,
+                    children: [
+                      /// Build Image
+                      _buildImage(),
 
-                    _controllers.uiLayerCtrl.add(null);
-                  },
-                  onInteractionUpdate:
-                      callbacks.mainEditorCallbacks?.onEditorZoomScaleUpdate,
-                  onInteractionEnd: (details) {
-                    callbacks.mainEditorCallbacks?.onEditorZoomScaleEnd
-                        ?.call(details);
-                    layerInteractionManager.freeStyleHighPerformanceEditorZoom =
-                        false;
-                    _controllers.uiLayerCtrl.add(null);
-                  },
-                  child: ContentRecorder(
-                    key: const ValueKey('main-editor-content-recorder'),
-                    autoDestroyController: false,
-                    controller: _controllers.screenshot,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      fit: StackFit.expand,
-                      children: [
-                        /// Build Image
-                        _buildImage(),
-
-                        /// Build layer stack
-                        _buildLayers(),
-                        //
-                        // if (widget.configs.imageGenerationConfigs
-                        //     .captureOnlyBackgroundImageArea)
-                        //   Hero(
-                        //     tag: 'crop_layer_painter_hero',
-                        //     child: CustomPaint(
-                        //       foregroundPainter: imageGenerationConfigs
-                        //               .captureOnlyBackgroundImageArea
-                        //           ? CropLayerPainter(
-                        //               opacity: imageEditorTheme
-                        //                   .outsideCaptureAreaLayerOpacity,
-                        //               backgroundColor:
-                        //               imageEditorTheme.background,
-                        //               imgRatio:
-                        //                   stateManager.
-                        //                   transformConfigs.isNotEmpty
-                        //                       ? stateManager.transformConfigs
-                        //                           .cropRect.size.aspectRatio
-                        //                       : sizesManager
-                        //                           .decodedImageSize.aspectRatio,
-                        //               isRoundCropper:
-                        //                   cropRotateEditorConfigs.roundCropper,
-                        //               is90DegRotated: stateManager
-                        //                   .transformConfigs.is90DegRotated,
-                        //             )
-                        //           : null,
-                        //       child: const SizedBox.expand(),
-                        //     ),
-                        //   ),
-                      ],
-                    ),
+                      /// Build layer stack
+                      _buildLayers(),
+                      //
+                      // if (widget.configs.imageGenerationConfigs
+                      //     .captureOnlyBackgroundImageArea)
+                      //   Hero(
+                      //     tag: 'crop_layer_painter_hero',
+                      //     child: CustomPaint(
+                      //       foregroundPainter: imageGenerationConfigs
+                      //               .captureOnlyBackgroundImageArea
+                      //           ? CropLayerPainter(
+                      //               opacity: imageEditorTheme
+                      //                   .outsideCaptureAreaLayerOpacity,
+                      //               backgroundColor:
+                      //               imageEditorTheme.background,
+                      //               imgRatio:
+                      //                   stateManager.
+                      //                   transformConfigs.isNotEmpty
+                      //                       ? stateManager.transformConfigs
+                      //                           .cropRect.size.aspectRatio
+                      //                       : sizesManager
+                      //                           .decodedImageSize.aspectRatio,
+                      //               isRoundCropper:
+                      //                   cropRotateEditorConfigs.roundCropper,
+                      //               is90DegRotated: stateManager
+                      //                   .transformConfigs.is90DegRotated,
+                      //             )
+                      //           : null,
+                      //       child: const SizedBox.expand(),
+                      //     ),
+                      //   ),
+                    ],
                   ),
                 ),
               ),

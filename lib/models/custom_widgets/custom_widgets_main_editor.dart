@@ -39,6 +39,7 @@ class CustomWidgetsMainEditor {
     this.bottomBarHeight = 0,
     this.bodySize = Size.zero,
     this.aspectRatio = 9 / 16,
+    this.stickyHeader,
   });
 
   /// Override the close warning dialog when we made changes.
@@ -195,4 +196,7 @@ class CustomWidgetsMainEditor {
 
   /// aspect ratio
   final double aspectRatio;
+
+  /// A sticky header widget that can be used in the editor.
+  final Widget? stickyHeader;
 }
