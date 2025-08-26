@@ -2457,10 +2457,12 @@ class ProImageEditorState extends State<ProImageEditor>
                                 !isSubEditorOpen && configs.isLayerInteractive,
                             highPerformanceMode: layerInteractionManager
                                 .freeStyleHighPerformance,
-                            onDuplicateTap: () {
+                            onDuplicateTap: () async {
                               if (!configs.isLayerInteractive) return;
                               final copyLayer =
                                   _layerCopyManager.copyLayer(layerItem);
+                              await mainEditorCallbacks?.onLayerCopy
+                                  ?.call(copyLayer);
                               addLayer(
                                 copyLayer
                                   ..id = generateUniqueId()
@@ -2811,6 +2813,8 @@ class ProImageEditorState extends State<ProImageEditor>
           activeLayers[i] as JDStickerLayerData;
       jdStickerLayerData
         ..sticker = layer.sticker
+        ..format = layer.format
+        ..runTimeContent = layer.runTimeContent
         ..id = layerData.id
         ..flipX = layerData.flipX
         ..flipY = layerData.flipY

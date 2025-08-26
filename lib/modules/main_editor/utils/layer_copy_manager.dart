@@ -166,6 +166,8 @@ class LayerCopyManager {
     return JDStickerLayerData(
       id: layer.id,
       sticker: layer.sticker,
+      format: layer.format,
+      runTimeContent: layer.runTimeContent,
       offset: Offset(layer.offset.dx, layer.offset.dy),
       rotation: layer.rotation,
       scale: layer.scale,
