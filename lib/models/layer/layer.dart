@@ -767,11 +767,15 @@ class JDStickerLayerData extends Layer {
   String sticker;
   double? initHeight;
   double? initWidth;
+  String? format;
+  String? runTimeContent;
 
   JDStickerLayerData({
     required this.sticker,
     this.initWidth,
     this.initHeight,
+    this.format,
+    this.runTimeContent,
     super.offset,
     super.rotation,
     super.scale,
@@ -803,6 +807,8 @@ class JDStickerLayerData extends Layer {
       sticker: map['sticker'],
       initHeight: map['initHeight'],
       initWidth: map['initWidth'],
+      format: map['format'],
+      runTimeContent: map['runTimeContent'],
     );
   }
 
@@ -813,6 +819,8 @@ class JDStickerLayerData extends Layer {
       'sticker': sticker,
       'initHeight': initHeight,
       'initWidth': initWidth,
+      'format': format,
+      'runTimeContent': runTimeContent,
       'type': 'JDSticker',
     };
   }

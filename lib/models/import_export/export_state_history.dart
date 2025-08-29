@@ -125,6 +125,14 @@ class ExportStateHistory {
 
       Map<String, dynamic> transformConfigsMap =
           element.transformConfigs.toMap();
+
+      // Remove runtime content
+      for (var layer in layers) {
+        if (layer['runTimeContent'] != null) {
+          layer['runTimeContent'] = null;
+        }
+      }
+
       history.add({
         if (layers.isNotEmpty) 'layers': layers,
         if (_configs.exportFilter && element.filters.isNotEmpty)
