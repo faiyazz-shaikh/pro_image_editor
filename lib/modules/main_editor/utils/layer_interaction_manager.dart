@@ -543,4 +543,114 @@ class LayerInteractionManager {
       );
     }
   }
+  // *** JD change for scale and rotate ** //
+
+  /// Starting position of the rotate and scale button relative to the layer's
+  Offset? rotateScaleButtonStartPosition;
+
+  /// Resets the state of the rotation and scaling helpers.
+  void reset() {
+    rotateScaleLayerSizeHelper = null;
+    rotateScaleButtonStartPosition = null;
+    rotateScaleLayerScaleHelper = null;
+  }
+
+  /// Calculates scaling and rotation based on user interactions.
+  jdCalculateInteractiveButtonScaleRotate({
+    required double editorScaleFactor,
+    required Offset editorScaleOffset,
+    required ProImageEditorConfigs configs,
+    required ScaleUpdateDetails details,
+    required Layer activeLayer,
+    required Size editorSize,
+    required bool configEnabledHitVibration,
+    required ThemeLayerInteraction layerTheme,
+  }) {
+    /// Calculates the rotation angle (in radians) for a button moved to a
+    /// new position.
+    /// [oldPosition] is the initial button position,
+    /// [newPosition] is the final button position.
+    double calculateRotation(Offset oldPosition, Offset newPosition) {
+      // Calculate the vectors from the origin to the old and new positions
+      Offset oldVector = oldPosition;
+      Offset newVector = newPosition;
+
+      // Get the angle of each vector relative to the x-axis
+      double oldAngle = atan2(oldVector.dy, oldVector.dx);
+      double newAngle = atan2(newVector.dy, newVector.dx);
+
+      // Calculate the rotation angle
+      double rotation = newAngle - oldAngle;
+
+      // Normalize the rotation angle to be between -pi and pi
+      if (rotation > pi) rotation -= 2 * pi;
+      if (rotation < -pi) rotation += 2 * pi;
+
+      return rotation; // In radians
+    }
+
+    /// Calculates the scale factor based on the movement of a button.
+    /// [oldPosition] is the initial button position,
+    /// [newPosition] is the final button position.
+    double calculateScale(
+      Offset oldPosition,
+      Offset newPosition,
+    ) {
+      // Calculate distances from the origin to the old and new positions
+      double oldDistance = (oldPosition).distance;
+      double newDistance = (newPosition).distance;
+
+      // Calculate the scale factor
+      if (oldDistance == 0 || newDistance == 0) {
+        return 1;
+      }
+
+      return newDistance / oldDistance;
+    }
+
+    Offset layerOffset = activeLayer.offset;
+
+    Offset realTouchPosition =
+        (details.localFocalPoint - editorScaleOffset) / editorScaleFactor;
+
+    Offset touchPositionFromLayerCenter =
+        realTouchPosition - editorSize.center(Offset.zero) - layerOffset;
+
+    if (activeLayer.flipX) {
+      touchPositionFromLayerCenter = Offset(
+        -touchPositionFromLayerCenter.dx,
+        touchPositionFromLayerCenter.dy,
+      );
+    }
+    if (activeLayer.flipY) {
+      touchPositionFromLayerCenter = Offset(
+        touchPositionFromLayerCenter.dx,
+        -touchPositionFromLayerCenter.dy,
+      );
+    }
+
+    rotateScaleButtonStartPosition ??= touchPositionFromLayerCenter;
+
+    activeLayer.scale = baseScaleFactor *
+        calculateScale(
+          rotateScaleButtonStartPosition!,
+          touchPositionFromLayerCenter,
+        );
+
+    _setMinMaxScaleFactor(configs, activeLayer);
+
+    activeLayer.rotation = baseAngleFactor +
+        calculateRotation(
+          rotateScaleButtonStartPosition!,
+          touchPositionFromLayerCenter,
+        );
+
+    if (editorScaleFactor != 1) return;
+    checkRotationLine(
+      activeLayer: activeLayer,
+      editorSize: editorSize,
+      configEnabledHitVibration: configEnabledHitVibration,
+    );
+  }
+  // *** End JD change for scale and rotate ** //
 }
