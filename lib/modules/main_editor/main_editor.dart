@@ -835,7 +835,8 @@ class ProImageEditorState extends State<ProImageEditor>
       layerInteractionManager
         ..freeStyleHighPerformanceScaling =
             paintEditorConfigs.freeStyleHighPerformanceScaling ?? !isDesktop
-        ..calculateInteractiveButtonScaleRotate(
+        // JD Calculate the scale and rotation fixes.
+        ..jdCalculateInteractiveButtonScaleRotate(
           configs: configs,
           activeLayer: _activeLayer!,
           configEnabledHitVibration: helperLines.hitVibration,
@@ -2538,9 +2539,12 @@ class ProImageEditorState extends State<ProImageEditor>
                             },
                             onScaleRotateUp: (details) {
                               if (!configs.isLayerInteractive) return;
-                              layerInteractionManager
-                                ..rotateScaleLayerSizeHelper = null
-                                ..rotateScaleLayerScaleHelper = null;
+                              // JD change for scale and rotate issue
+                              // layerInteractionManager
+                              //   ..rotateScaleLayerSizeHelper = null
+                              //   ..rotateScaleButtonStartPosition = null
+                              //   ..rotateScaleLayerScaleHelper = null;
+                              layerInteractionManager.reset();
                               setState(() {
                                 selectedLayerIndex = -1;
                               });
