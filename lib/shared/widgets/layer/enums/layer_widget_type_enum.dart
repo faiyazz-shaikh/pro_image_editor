@@ -18,4 +18,13 @@ enum LayerWidgetType {
 
   /// An unknown or undefined layer type.
   unknown,
+
+  ///
+  document,
+  ///
+  painting,
+  ///
+  jdImage,
+  ///
+  jdSticker
 }

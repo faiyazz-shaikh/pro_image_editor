@@ -2,6 +2,10 @@
 import 'dart:ui';
 
 // Project imports:
+import '../../../core/models/layers/image_data_layer.dart';
+import '../../../core/models/layers/painting_data_layer.dart';
+import '../../../core/models/layers/quill_data_layer.dart';
+import '../../../core/models/layers/sticker_layer_data.dart';
 import '/core/models/layers/layer.dart';
 
 /// A class responsible for managing layers in an image editing environment.
@@ -25,6 +29,14 @@ class LayerCopyManager {
       return createCopyPaintLayer(layer as PaintLayer);
     } else if (layer.isWidgetLayer) {
       return createCopyWidgetLayer(layer as WidgetLayer);
+    } else if (layer is QuillDataLayer) {
+      return createCopyQuillDataLayer(layer);
+    } else if (layer is PaintingDataLayer) {
+      return createCopyPaintingDataLayer(layer);
+    } else if (layer is JDImageLayerData) {
+      return createCopyJDImageLayerData(layer);
+    } else if (layer is JDStickerLayerData) {
+      return createCopyJDStickerLayerData(layer);
     } else {
       return layer;
     }
@@ -68,7 +80,16 @@ class LayerCopyManager {
         enableCopyKey: enableCopyKey,
         offset: offset,
       );
-    } else {
+    } else if (layer is QuillDataLayer) {
+      return createCopyQuillDataLayer(layer);
+    } else if (layer is PaintingDataLayer) {
+      return createCopyPaintingDataLayer(layer);
+    } else if (layer is JDImageLayerData) {
+      return createCopyJDImageLayerData(layer);
+    } else if (layer is JDStickerLayerData) {
+      return createCopyJDStickerLayerData(layer);
+    }
+    else {
       return layer;
     }
   }
@@ -151,6 +172,7 @@ class LayerCopyManager {
     bool enableCopyKey = true,
     Offset offset = Offset.zero,
   }) {
+
     return EmojiLayer(
       id: enableCopyId ? layer.id : null,
       key: enableCopyKey ? layer.key : null,
@@ -223,6 +245,136 @@ class LayerCopyManager {
       item: layer.item.copy(),
       rawSize: layer.rawSize,
       opacity: layer.opacity,
+      interaction: layer.interaction.copyWith(),
+      boxConstraints: layer.boxConstraints?.copyWith(),
+      startTime: layer.startTime,
+      endTime: layer.endTime,
+      enterDuration: layer.enterDuration,
+      exitDuration: layer.exitDuration,
+      enterCurve: layer.enterCurve,
+      exitCurve: layer.exitCurve,
+      transitionBuilder: layer.transitionBuilder,
+    )..groupId = layer.groupId;
+  }
+
+  ///
+  QuillDataLayer createCopyQuillDataLayer(QuillDataLayer layer) {
+    return QuillDataLayer(
+      id: layer.id,
+      key: layer.key,
+      document: layer.document,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
+      hyperLink: layer.hyperLink,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+
+      meta: layer.meta,
+      interaction: layer.interaction.copyWith(),
+      boxConstraints: layer.boxConstraints?.copyWith(),
+      startTime: layer.startTime,
+      endTime: layer.endTime,
+      enterDuration: layer.enterDuration,
+      exitDuration: layer.exitDuration,
+      enterCurve: layer.enterCurve,
+      exitCurve: layer.exitCurve,
+      transitionBuilder: layer.transitionBuilder,
+    )..groupId = layer.groupId;
+  }
+
+  ///
+  PaintingDataLayer createCopyPaintingDataLayer(PaintingDataLayer layer) {
+    return PaintingDataLayer(
+      id: layer.id,
+      key: layer.key,
+      painting: layer.painting,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
+      hyperLink: layer.hyperLink,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+
+      meta: layer.meta,
+      interaction: layer.interaction.copyWith(),
+      boxConstraints: layer.boxConstraints?.copyWith(),
+      startTime: layer.startTime,
+      endTime: layer.endTime,
+      enterDuration: layer.enterDuration,
+      exitDuration: layer.exitDuration,
+      enterCurve: layer.enterCurve,
+      exitCurve: layer.exitCurve,
+      transitionBuilder: layer.transitionBuilder,
+    )..groupId = layer.groupId;
+  }
+
+  ///
+  JDImageLayerData createCopyJDImageLayerData(JDImageLayerData layer) {
+    return JDImageLayerData(
+      id: layer.id,
+      key: layer.key,
+      image: layer.image,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
+      hyperLink: layer.hyperLink,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+
+      meta: layer.meta,
+      interaction: layer.interaction.copyWith(),
+      boxConstraints: layer.boxConstraints?.copyWith(),
+      startTime: layer.startTime,
+      endTime: layer.endTime,
+      enterDuration: layer.enterDuration,
+      exitDuration: layer.exitDuration,
+      enterCurve: layer.enterCurve,
+      exitCurve: layer.exitCurve,
+      transitionBuilder: layer.transitionBuilder,
+    )..groupId = layer.groupId;
+  }
+
+  ///
+  JDStickerLayerData createCopyJDStickerLayerData(JDStickerLayerData layer) {
+    return JDStickerLayerData(
+      id: layer.id,
+      key: layer.key,
+      sticker: layer.sticker,
+      format: layer.format,
+      runTimeContent: layer.runTimeContent,
+      offset: Offset(layer.offset.dx, layer.offset.dy),
+      rotation: layer.rotation,
+      scale: layer.scale,
+      flipX: layer.flipX,
+      flipY: layer.flipY,
+      horizontalMirror: layer.horizontalMirror,
+      verticalMirror: layer.verticalMirror,
+      transparency: layer.transparency,
+      lock: layer.lock,
+      hyperLink: layer.hyperLink,
+      initWidth: layer.initWidth,
+      initHeight: layer.initHeight,
+
+      meta: layer.meta,
       interaction: layer.interaction.copyWith(),
       boxConstraints: layer.boxConstraints?.copyWith(),
       startTime: layer.startTime,

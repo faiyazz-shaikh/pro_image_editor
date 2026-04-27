@@ -54,6 +54,7 @@ class LoadingDialog extends ChangeNotifier {
     ThemeData? theme,
     required ProImageEditorConfigs configs,
   }) async {
+    return;
     theme ??= configs.theme ?? Theme.of(context);
     message ??= configs.i18n.various.loadingDialogMsg;
 
@@ -100,6 +101,7 @@ class LoadingDialog extends ChangeNotifier {
   /// The method triggers the hide animation of the dialog,
   /// which will remove the overlay after the animation completes.
   void hide() {
+    return;
     if (_overlays.isNotEmpty) {
       if (_overlays.last.animationKey.currentState == null) {
         _removeOverlay();

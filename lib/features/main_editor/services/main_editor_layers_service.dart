@@ -122,7 +122,9 @@ class MainEditorLayersService {
       configs,
     );
 
-    if (mouseService.validatePanAction(event: event) && layersAreSelectable) {
+    if (isDesktop &&
+        mouseService.validatePanAction(event: event) &&
+        layersAreSelectable) {
       return;
     }
 
@@ -208,9 +210,12 @@ class MainEditorLayersService {
       event: event,
     );
 
+    final bool shouldSelectOnPointerDown =
+        event.kind == PointerDeviceKind.mouse;
+
     /// If a user directly drags a layer, we first need to ensure the layer is
     /// selected when the pointer goes down.
-    if (layer.interaction.enableSelection) {
+    if (layer.interaction.enableSelection && shouldSelectOnPointerDown) {
       bool isAlreadySelected = selectedIds.contains(layer.id);
 
       if (!isAlreadySelected && (selectedIds.isEmpty || _enableMultiSelect)) {

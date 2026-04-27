@@ -24,8 +24,12 @@ import '/shared/utils/unique_id_generator.dart';
 import '../editor_image.dart';
 import 'emoji_layer.dart';
 import 'exported_layer.dart';
+import 'image_data_layer.dart';
 import 'layer_interaction.dart';
 import 'paint_layer.dart';
+import 'painting_data_layer.dart';
+import 'quill_data_layer.dart';
+import 'sticker_layer_data.dart';
 import 'text_layer.dart';
 import 'widget_layer.dart';
 
@@ -58,11 +62,21 @@ class Layer {
     this.enterCurve,
     this.exitCurve,
     this.transitionBuilder,
+    bool? horizontalMirror,
+    bool? verticalMirror,
+    double? transparency,
+    bool? lock,
+    this.hyperLink,
   }) : key = key ??= GlobalKey(),
        keyInternalSize = GlobalKey(),
        repaintBoundaryKey = GlobalKey(),
        id = id ?? generateUniqueId(),
-       interaction = interaction ?? LayerInteraction();
+       interaction = interaction ?? LayerInteraction() {
+    this.horizontalMirror = horizontalMirror ?? false;
+    this.verticalMirror = verticalMirror ?? false;
+    this.transparency = transparency ?? 1;
+    this.lock = lock ?? false;
+  }
 
   /// Factory constructor for creating a Layer instance from a map and a list
   /// of stickers.
@@ -124,6 +138,11 @@ class Layer {
           : null,
       enterCurve: parseCurve(map[keyConverter('enterCurve')] as String?),
       exitCurve: parseCurve(map[keyConverter('exitCurve')] as String?),
+      horizontalMirror: map['horizontalMirror'] ?? false,
+      verticalMirror: map['verticalMirror'] ?? false,
+      transparency: map['transparency'] ?? 1,
+      lock: map['lock'] ?? false,
+      hyperLink: map['hyperLink'],
     );
 
     /// Determines the layer type from the map and returns the appropriate
@@ -151,6 +170,19 @@ class Layer {
           requirePrecache: requirePrecache,
           keyConverter: keyConverter,
         );
+
+      case 'JDQuillDocument':
+        return QuillDataLayer.fromMap(layer, map);
+
+      case 'JDPaintingDocument':
+        return PaintingDataLayer.fromMap(layer, map);
+
+      case 'JDImage':
+        return JDImageLayerData.fromMap(layer, map);
+
+      case 'JDSticker':
+        return JDStickerLayerData.fromMap(layer, map);
+
       default:
         // Returns the base Layer instance when type is unrecognized.
         return layer;
@@ -261,6 +293,22 @@ class Layer {
   /// Flutter widget or sticker.
   bool get isWidgetLayer => false;
 
+  /// Horizontal mirror of view
+  late bool horizontalMirror;
+
+  /// Vertical mirror of view
+  late bool verticalMirror;
+
+  /// Opacity of the view
+  late double transparency;
+
+  /// To check View is locked
+  late bool lock;
+
+  ///
+  String? hyperLink;
+
+
   /// Converts this transform object to a Map.
   ///
   /// Returns a Map representing the properties of this layer object,
@@ -291,6 +339,11 @@ class Layer {
       if (exitDuration != null) 'exitDuration': exitDuration!.inMilliseconds,
       if (enterCurve != null) 'enterCurve': curveToString(enterCurve!),
       if (exitCurve != null) 'exitCurve': curveToString(exitCurve!),
+      'horizontalMirror': horizontalMirror,
+      'verticalMirror': verticalMirror,
+      'transparency': transparency,
+      'lock': lock,
+      'hyperLink': hyperLink,
     };
   }
 
@@ -335,6 +388,14 @@ class Layer {
       if (layer.enterCurve != enterCurve)
         'enterCurve': curveToString(enterCurve!),
       if (layer.exitCurve != exitCurve) 'exitCurve': curveToString(exitCurve!),
+      if (layer.horizontalMirror != horizontalMirror)
+        'horizontalMirror': horizontalMirror,
+      if (layer.verticalMirror != verticalMirror)
+        'verticalMirror': verticalMirror,
+      if (layer.transparency != transparency)
+        'transparency': transparency,
+      if (layer.lock != lock) 'lock': lock,
+      if (layer.hyperLink != hyperLink) 'hyperLink': hyperLink,
     };
   }
 

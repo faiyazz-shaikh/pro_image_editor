@@ -23,6 +23,10 @@ import '/shared/widgets/layer/widgets/layer_widget_censor_item.dart';
 import '/shared/widgets/layer/widgets/layer_widget_emoji_item.dart';
 import '/shared/widgets/layer/widgets/layer_widget_paint_item.dart';
 import '/shared/widgets/layer/widgets/layer_widget_text_item.dart';
+import '../../../core/models/layers/image_data_layer.dart';
+import '../../../core/models/layers/painting_data_layer.dart';
+import '../../../core/models/layers/quill_data_layer.dart';
+import '../../../core/models/layers/sticker_layer_data.dart';
 import 'interaction_helper/layer_interaction_helper_widget.dart';
 import 'layer_timeline_visibility.dart';
 import 'widgets/layer_widget_custom_item.dart';
@@ -154,6 +158,18 @@ class _LayerWidgetState extends State<LayerWidget>
           ? LayerWidgetType.censor
           : LayerWidgetType.canvas;
       _fractionalOffset = configs.paintEditor.layerFractionalOffset;
+    } else if (_layer is QuillDataLayer) {
+      _layerType = LayerWidgetType.document;
+      _fractionalOffset = const Offset(-0.5, -0.5);
+    } else if (_layer is PaintingDataLayer) {
+      _layerType = LayerWidgetType.painting;
+      _fractionalOffset = const Offset(-0.5, -0.5);
+    } else if (_layer is JDImageLayerData) {
+      _layerType = LayerWidgetType.jdImage;
+      _fractionalOffset = const Offset(-0.5, -0.5);
+    } else if (_layer is JDStickerLayerData) {
+      _layerType = LayerWidgetType.jdSticker;
+      _fractionalOffset = const Offset(-0.5, -0.5);
     } else {
       _layerType = LayerWidgetType.unknown;
       _fractionalOffset = const Offset(-0.5, -0.5);
@@ -420,6 +436,8 @@ class _LayerWidgetState extends State<LayerWidget>
                       stickerEditorConfigs: stickerEditorConfigs,
                       paintEditorConfigs: paintEditorConfigs,
                       designMode: designMode,
+                      customContentBuilder:
+                          widget.configs.mainEditor.widgets.contentBuilder,
                     ),
                   ),
                 ),
@@ -490,6 +508,7 @@ class _LayerContentItem extends StatelessWidget {
     required this.stickerEditorConfigs,
     required this.paintEditorConfigs,
     required this.designMode,
+    this.customContentBuilder,
   });
 
   final LayerWidgetType layerType;
@@ -503,6 +522,7 @@ class _LayerContentItem extends StatelessWidget {
   final StickerEditorConfigs stickerEditorConfigs;
   final PaintEditorConfigs paintEditorConfigs;
   final ImageEditorDesignMode designMode;
+  final Widget Function(Layer)? customContentBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -540,6 +560,13 @@ class _LayerContentItem extends StatelessWidget {
           layer: layer as PaintLayer,
           censorConfigs: paintEditorConfigs.censorConfigs,
         );
+      case LayerWidgetType.document:
+      case LayerWidgetType.painting:
+      case LayerWidgetType.jdImage:
+      case LayerWidgetType.jdSticker:
+        content = customContentBuilder != null
+            ? customContentBuilder!(layer)
+            : const SizedBox.shrink();
       default:
         return const SizedBox.shrink();
     }

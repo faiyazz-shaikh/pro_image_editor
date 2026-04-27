@@ -85,6 +85,7 @@ class MainEditorStateHistoryService {
     }
 
     // Update state and UI
+    setState.call();
     stateManager.updateActiveItems();
     mainEditorCallbacks?.handleUpdateUI();
     isImportInProgress = false;
@@ -100,6 +101,7 @@ class MainEditorStateHistoryService {
       editorConfigs: this.configs,
       stateHistory: stateManager.stateHistory,
       imageInfos: imageInfos,
+      editorBodySize: sizesManager.bodySize,
       editorPosition: stateManager.historyPointer,
       configs: configs,
       contentRecorderCtrl: controllers.screenshot,
@@ -111,13 +113,11 @@ class MainEditorStateHistoryService {
     for (EditorStateHistory el in import.stateHistory) {
       for (Layer layer in el.layers) {
         if (import.configs.recalculateSizeAndPosition) {
-          Size currentImageSize = sizesManager.decodedImageSize;
-          Size lastRenderedImgSize = import.lastRenderedImgSize;
+          Size currentImageSize = sizesManager.bodySize;
+          Size imageSize = import.imgSize;
 
-          double scaleWidth =
-              currentImageSize.width / lastRenderedImgSize.width;
-          double scaleHeight =
-              currentImageSize.height / lastRenderedImgSize.height;
+          double scaleWidth = currentImageSize.width / imageSize.width;
+          double scaleHeight = currentImageSize.height / imageSize.height;
 
           scaleWidth = scaleWidth.isFinite ? scaleWidth : 1;
           scaleHeight = scaleHeight.isFinite ? scaleHeight : 1;

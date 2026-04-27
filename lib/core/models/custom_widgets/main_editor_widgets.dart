@@ -1,10 +1,11 @@
 // Flutter imports:
 import 'package:flutter/widgets.dart';
 
-// Project imports:
 import '/features/main_editor/main_editor.dart';
 import '/shared/widgets/reactive_widgets/reactive_custom_appbar.dart';
 import '/shared/widgets/reactive_widgets/reactive_custom_widget.dart';
+// Project imports:
+import '../layers/layer.dart';
 import 'utils/custom_widgets_typedef.dart';
 
 /// A custom widget for the main editor interface in an image editor.
@@ -37,6 +38,9 @@ class MainEditorWidgets {
     this.bottomBar,
     this.bodyItems,
     this.bodyItemsRecorded,
+    this.aspectRatio = 9 / 16,
+    this.floatingActionButton,
+    this.contentBuilder,
   });
 
   /// Override the close warning dialog when we made changes.
@@ -129,6 +133,15 @@ class MainEditorWidgets {
   /// {@macro customBodyItemRecorded}
   final CustomBodyItems<ProImageEditorState>? bodyItemsRecorded;
 
+  /// aspect ratio
+  final double aspectRatio;
+
+  ///
+  final Widget? floatingActionButton;
+
+  ///
+  final Widget Function(Layer)? contentBuilder;
+
   /// Creates a copy of this `MainEditorWidgets` object with the given
   /// fields replaced with new values.
   ///
@@ -157,6 +170,9 @@ class MainEditorWidgets {
     bottomBar,
     CustomBodyItems<ProImageEditorState>? bodyItems,
     CustomBodyItems<ProImageEditorState>? bodyItemsRecorded,
+    Widget Function(Layer)? contentBuilder,
+    double? aspectRatio,
+    Widget? floatingActionButton
   }) {
     return MainEditorWidgets(
       closeWarningDialog: closeWarningDialog ?? this.closeWarningDialog,
@@ -166,6 +182,9 @@ class MainEditorWidgets {
       bottomBar: bottomBar ?? this.bottomBar,
       bodyItems: bodyItems ?? this.bodyItems,
       bodyItemsRecorded: bodyItemsRecorded ?? this.bodyItemsRecorded,
+      contentBuilder: contentBuilder ?? this.contentBuilder,
+      aspectRatio: aspectRatio ?? this.aspectRatio,
+      floatingActionButton: floatingActionButton ?? this.floatingActionButton,
     );
   }
 }

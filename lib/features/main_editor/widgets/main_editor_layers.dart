@@ -151,28 +151,31 @@ class _MainEditorLayersState extends State<MainEditorLayers> {
       child: ValueListenableBuilder(
         valueListenable: _layersService.deferId,
         builder: (_, deferId, _) {
-          return DeferredPointerHandler(
-            id: deferId,
-            selectedLayerId: _layerInteractionManager.selectedLayerId,
-            child: StreamBuilder(
-              stream: widget.controllers.uiLayerCtrl.stream,
-              builder: (context, snapshot) {
-                return GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: () {
-                    _layerInteractionManager.clearSelectedLayers();
-                    widget.onCheckInteractiveViewer();
-                    setState(() {});
-                  },
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      for (Layer layer in widget.activeLayers)
-                        _buildLayerWidget(layer),
-                    ],
-                  ),
-                );
-              },
+          return Overlay.wrap(
+            clipBehavior: Clip.hardEdge,
+            child: DeferredPointerHandler(
+              id: deferId,
+              selectedLayerId: _layerInteractionManager.selectedLayerId,
+              child: StreamBuilder(
+                stream: widget.controllers.uiLayerCtrl.stream,
+                builder: (context, snapshot) {
+                  return GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () {
+                      _layerInteractionManager.clearSelectedLayers();
+                      widget.onCheckInteractiveViewer();
+                      setState(() {});
+                    },
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        for (Layer layer in widget.activeLayers)
+                          _buildLayerWidget(layer),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
           );
         },

@@ -183,36 +183,13 @@ class MainEditorInteractiveContent extends StatelessWidget {
 
   Widget _buildInteractiveViewer() {
     var mainConfigs = configs.mainEditor;
-    return ExtendedInteractiveViewer(
-      key: interactiveViewerKey,
-      enableExternalGestureDetector: true,
-      zoomConfigs: mainConfigs,
-      onInteractionStart: (details) {
-        callbacks.mainEditorCallbacks?.onEditorZoomScaleStart?.call(details);
-
-        controllers.uiLayerCtrl.add(null);
-      },
-      onInteractionUpdate: (details) {
-        callbacks.mainEditorCallbacks?.onEditorZoomScaleUpdate?.call(details);
-        controllers.cropLayerPainterCtrl.add(null);
-      },
-      onInteractionEnd: (details) {
-        callbacks.mainEditorCallbacks?.onEditorZoomScaleEnd?.call(details);
-        controllers.uiLayerCtrl.add(null);
-        controllers.cropLayerPainterCtrl.add(null);
-      },
-      onMatrix4Change: (value) {
-        controllers.cropLayerPainterCtrl.add(null);
-        callbacks.mainEditorCallbacks?.onEditorZoomMatrix4Change?.call(value);
-      },
-      child: isVideoEditor
-          ? Stack(
-              alignment: Alignment.center,
-              fit: StackFit.expand,
-              children: [buildVideo(), _buildContentRecorder()],
-            )
-          : _buildContentRecorder(),
-    );
+    return isVideoEditor
+        ? Stack(
+            alignment: Alignment.center,
+            fit: StackFit.expand,
+            children: [buildVideo(), _buildContentRecorder()],
+          )
+        : _buildContentRecorder();
   }
 
   Widget _buildContentRecorder() {

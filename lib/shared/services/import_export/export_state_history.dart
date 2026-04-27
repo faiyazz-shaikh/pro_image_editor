@@ -15,6 +15,10 @@ import '/features/tune_editor/models/tune_adjustment_matrix.dart';
 import '/shared/extensions/export_string_extension.dart';
 import '/shared/extensions/num_extension.dart';
 import '/shared/utils/decode_image.dart';
+import '../../../core/models/layers/image_data_layer.dart';
+import '../../../core/models/layers/painting_data_layer.dart';
+import '../../../core/models/layers/quill_data_layer.dart';
+import '../../../core/models/layers/sticker_layer_data.dart';
 import '../content_recorder/controllers/content_recorder_controller.dart';
 import 'constants/export_import_version.dart';
 import 'enums/export_import_enum.dart';
@@ -31,6 +35,7 @@ class ExportStateHistory {
     required ProImageEditorConfigs editorConfigs,
     required List<EditorStateHistory> stateHistory,
     required ImageInfos imageInfos,
+    required Size editorBodySize,
     required int editorPosition,
     required ContentRecorderController contentRecorderCtrl,
     required BuildContext context,
@@ -39,6 +44,7 @@ class ExportStateHistory {
        _editorConfigs = editorConfigs,
        _stateHistory = stateHistory,
        _imageInfos = imageInfos,
+       _editorBodySize = editorBodySize,
        _contentRecorderCtrl = contentRecorderCtrl,
        _context = context,
        _editorPosition = editorPosition;
@@ -80,6 +86,9 @@ class ExportStateHistory {
   /// This [ImageInfos] object provides detailed information about the image,
   /// including metadata and transformation data.
   final ImageInfos _imageInfos;
+
+  /// The body size of the editor where layer coordinates are authored.
+  final Size _editorBodySize;
 
   /// The build context of the editor.
   ///
@@ -244,6 +253,11 @@ class ExportStateHistory {
     references = convertedLayer.references;
     history = convertedLayer.history;
 
+    final exportImgSize =
+        _editorBodySize.width > 0 && _editorBodySize.height > 0
+        ? _editorBodySize
+        : _imageInfos.originalRenderedSize;
+
     return {
       'version'.toMainKey(minifier): ExportImportVersion.latest,
       if (_configs.enableMinify) 'minify'.toMainKey(minifier): true,
@@ -257,10 +271,10 @@ class ExportStateHistory {
         'widgetRecords'.toMainKey(minifier): widgetRecords,
       if (references.isNotEmpty) 'references'.toMainKey(minifier): references,
       'imgSize'.toMainKey(minifier): {
-        'width'.toSizeKey(minifier): _imageInfos.rawSize.width.roundSmart(
+        'width'.toSizeKey(minifier): exportImgSize.width.roundSmart(
           maxDecimalPlaces,
         ),
-        'height'.toSizeKey(minifier): _imageInfos.rawSize.height.roundSmart(
+        'height'.toSizeKey(minifier): exportImgSize.height.roundSmart(
           maxDecimalPlaces,
         ),
       },
@@ -295,14 +309,22 @@ class ExportStateHistory {
         );
       }
       convertedLayers.add(
-        layer.toMapFromReference(lastLayerStateHelper[layer.id] ?? layer),
+        layer.toMapFromReference(
+          lastLayerStateHelper[layer.id] ?? layer,
+          maxDecimalPlaces: _configs.maxDecimalPlaces,
+          enableMinify: _configs.enableMinify,
+        ),
       );
     }
 
     for (var layer in element.layers) {
       if ((_configs.exportPaint && layer.isPaintLayer) ||
           (_configs.exportText && layer.isTextLayer) ||
-          (_configs.exportEmoji && layer.isEmojiLayer)) {
+          (_configs.exportEmoji && layer.isEmojiLayer) ||
+          (layer.runtimeType == QuillDataLayer) ||
+          (layer.runtimeType == PaintingDataLayer) ||
+          (layer.runtimeType == JDImageLayerData) ||
+          (layer.runtimeType == JDStickerLayerData)) {
         updateReference(layer);
       } else if (_configs.exportWidgets && layer.isWidgetLayer) {
         WidgetLayer widgetLayer = layer as WidgetLayer;

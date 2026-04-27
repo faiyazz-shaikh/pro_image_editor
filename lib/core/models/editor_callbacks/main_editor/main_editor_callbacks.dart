@@ -47,6 +47,7 @@ class MainEditorCallbacks extends StandaloneEditorCallbacks {
     this.onImageDecoded,
     this.onEditTextLayer,
     this.onCreateTextLayer,
+    this.onLayerCopy,
     super.onInit,
     super.onAfterViewInit,
     super.onUpdateUI,
@@ -354,6 +355,9 @@ class MainEditorCallbacks extends StandaloneEditorCallbacks {
   /// This callback is **not triggered** when [LayerInteractionSelectable] is
   /// disabled.
   final Function(Set<String> value)? onSelectedLayersChanged;
+
+  /// A callback function that is triggered when a layer is copied.
+  final Future<void> Function(Layer? layer)? onLayerCopy;
 
   /// Callback that is triggered when the hover state over the remove area
   /// changes.

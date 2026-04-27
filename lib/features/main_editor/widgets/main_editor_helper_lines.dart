@@ -68,58 +68,54 @@ class MainEditorHelperLines extends StatelessWidget {
 
               final scale = viewer?.scaleFactor ?? 1;
 
-              final offset = viewer?.offset ?? Offset.zero;
-              final screenSize = sizesManager.editorSize;
+              final screenSize = sizesManager.bodySize;
               final editorBodySize = sizesManager.bodySize;
 
               if (helperLines.isDisabledAtZoom && scale > 1) {
                 return const SizedBox.shrink();
               }
 
-              return Transform.translate(
-                offset: offset,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    if (helperLines.showVerticalLine)
-                      _buildLine(
-                        key: const ValueKey('Screen-Vertical-Guide-Line'),
-                        width:
-                            layerInteractionManager.showVerticalHelperLine &&
-                                !_isLayerInRemovalZone
-                            ? _strokeWidth
-                            : 0,
-                        height: screenSize.height * scale,
-                        left: editorBodySize.width / 2 * scale,
-                        top: 0,
-                        color: helperLines.style.verticalColor,
-                      ),
-                    if (helperLines.showHorizontalLine)
-                      _buildLine(
-                        key: const ValueKey('Screen-Horizontal-Guide-Line'),
-                        width: screenSize.width * scale,
-                        height:
-                            layerInteractionManager.showHorizontalHelperLine &&
-                                !_isLayerInRemovalZone
-                            ? _strokeWidth
-                            : 0,
-                        left: 0,
-                        top: editorBodySize.height / 2 * scale,
-                        color: helperLines.style.horizontalColor,
-                        margin:
-                            configs.layerInteraction.hideToolbarOnInteraction
-                            ? EdgeInsets.only(
-                                top: sizesManager.appBarHeight,
-                                bottom: sizesManager.bottomBarHeight,
-                              )
-                            : null,
-                      ),
-                    if (helperLines.showRotateLine)
-                      _buildRotateLine(scale, screenSize.height * 2),
-                    if (helperLines.showLayerAlignLine)
-                      ..._buildLayerAlignLines(scale, screenSize),
-                  ],
-                ),
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  if (helperLines.showVerticalLine)
+                    _buildLine(
+                      key: const ValueKey('Screen-Vertical-Guide-Line'),
+                      width:
+                          layerInteractionManager.showVerticalHelperLine &&
+                              !_isLayerInRemovalZone
+                          ? _strokeWidth
+                          : 0,
+                      height: screenSize.height,
+                      left: editorBodySize.width / 2,
+                      top: 0,
+                      color: helperLines.style.verticalColor,
+                    ),
+                  if (helperLines.showHorizontalLine)
+                    _buildLine(
+                      key: const ValueKey('Screen-Horizontal-Guide-Line'),
+                      width: screenSize.width,
+                      height:
+                          layerInteractionManager.showHorizontalHelperLine &&
+                              !_isLayerInRemovalZone
+                          ? _strokeWidth
+                          : 0,
+                      left: 0,
+                      top: editorBodySize.height / 2,
+                      color: helperLines.style.horizontalColor,
+                      margin:
+                          configs.layerInteraction.hideToolbarOnInteraction
+                          ? EdgeInsets.only(
+                              top: sizesManager.appBarHeight,
+                              bottom: sizesManager.bottomBarHeight,
+                            )
+                          : null,
+                    ),
+                  if (helperLines.showRotateLine)
+                    _buildRotateLine(1, screenSize.height * 2),
+                  if (helperLines.showLayerAlignLine)
+                    ..._buildLayerAlignLines(1, screenSize),
+                ],
               );
             },
           );
@@ -153,8 +149,8 @@ class MainEditorHelperLines extends StatelessWidget {
 
   Widget _buildRotateLine(double scale, double height) {
     return Positioned(
-      left: layerInteractionManager.rotationHelperLineX * scale,
-      top: layerInteractionManager.rotationHelperLineY * scale,
+      left: layerInteractionManager.rotationHelperLineX,
+      top: layerInteractionManager.rotationHelperLineY,
       child: FractionalTranslation(
         translation: const Offset(-0.5, -0.5),
         child: Transform.rotate(
@@ -180,16 +176,14 @@ class MainEditorHelperLines extends StatelessWidget {
     final halfStroke = _strokeWidth / 2;
 
     final verticalOffset =
-        (editorCenter.width +
+        editorCenter.width +
             layerInteractionManager.verticalGuideOffset.dx -
-            halfStroke) *
-        scale;
+            halfStroke;
 
     final horizontalOffset =
-        (editorCenter.height +
+        editorCenter.height +
             layerInteractionManager.horizontalGuideOffset.dy -
-            halfStroke) *
-        scale;
+            halfStroke;
 
     final showHorizontal =
         layerInteractionManager.isHorizontalGuideVisible &&
@@ -202,7 +196,7 @@ class MainEditorHelperLines extends StatelessWidget {
       if (showHorizontal)
         _buildLine(
           key: const ValueKey('Horizontal-Guide-Line'),
-          width: screenSize.width * scale,
+          width: screenSize.width,
           height: _strokeWidth,
           top: horizontalOffset,
           left: 0,
@@ -212,7 +206,7 @@ class MainEditorHelperLines extends StatelessWidget {
         _buildLine(
           key: const ValueKey('Vertical-Guide-Line'),
           width: _strokeWidth,
-          height: screenSize.height * scale,
+          height: screenSize.height,
           top: 0,
           left: verticalOffset,
           color: helperLines.style.layerAlignColor,

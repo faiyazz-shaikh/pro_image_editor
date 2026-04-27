@@ -9,7 +9,11 @@ import 'package:flutter/material.dart';
 import '/core/models/editor_callbacks/main_editor/helper_lines/helper_lines_callbacks.dart';
 import '/core/models/editor_configs/pro_image_editor_configs.dart';
 import '/core/models/history/last_layer_interaction_position.dart';
+import '/core/models/layers/image_data_layer.dart';
 import '/core/models/layers/layer.dart';
+import '/core/models/layers/painting_data_layer.dart';
+import '/core/models/layers/quill_data_layer.dart';
+import '/core/models/layers/sticker_layer_data.dart';
 import '/shared/utils/debounce.dart';
 import '/shared/utils/unique_id_generator.dart';
 
@@ -381,6 +385,72 @@ class LayerInteractionManager {
         meta: originalLayer.meta,
         boxConstraints: originalLayer.boxConstraints,
       )..groupId = originalLayer.groupId;
+    } else if (originalLayer is QuillDataLayer) {
+      return QuillDataLayer(
+        id: originalLayer.id,
+        key: originalLayer.key,
+        document: originalLayer.document,
+        initWidth: originalLayer.initWidth,
+        initHeight: originalLayer.initHeight,
+        interaction: originalLayer.interaction,
+        offset: originalLayer.offset,
+        rotation: originalLayer.rotation,
+        scale: originalLayer.scale,
+        flipX: originalLayer.flipX,
+        flipY: originalLayer.flipY,
+        meta: originalLayer.meta,
+        boxConstraints: originalLayer.boxConstraints,
+      )..groupId = originalLayer.groupId;
+    } else if (originalLayer is PaintingDataLayer) {
+      return PaintingDataLayer(
+        id: originalLayer.id,
+        key: originalLayer.key,
+        painting: originalLayer.painting,
+        initWidth: originalLayer.initWidth,
+        initHeight: originalLayer.initHeight,
+        interaction: originalLayer.interaction,
+        offset: originalLayer.offset,
+        rotation: originalLayer.rotation,
+        scale: originalLayer.scale,
+        flipX: originalLayer.flipX,
+        flipY: originalLayer.flipY,
+        meta: originalLayer.meta,
+        boxConstraints: originalLayer.boxConstraints,
+      )..groupId = originalLayer.groupId;
+    } else if (originalLayer is JDImageLayerData) {
+      return JDImageLayerData(
+        id: originalLayer.id,
+        key: originalLayer.key,
+        image: originalLayer.image,
+        initWidth: originalLayer.initWidth,
+        initHeight: originalLayer.initHeight,
+        interaction: originalLayer.interaction,
+        offset: originalLayer.offset,
+        rotation: originalLayer.rotation,
+        scale: originalLayer.scale,
+        flipX: originalLayer.flipX,
+        flipY: originalLayer.flipY,
+        meta: originalLayer.meta,
+        boxConstraints: originalLayer.boxConstraints,
+      )..groupId = originalLayer.groupId;
+    } else if (originalLayer is JDStickerLayerData) {
+      return JDStickerLayerData(
+        id: originalLayer.id,
+        key: originalLayer.key,
+        sticker: originalLayer.sticker,
+        format: originalLayer.format,
+        runTimeContent: originalLayer.runTimeContent,
+        initWidth: originalLayer.initWidth,
+        initHeight: originalLayer.initHeight,
+        interaction: originalLayer.interaction,
+        offset: originalLayer.offset,
+        rotation: originalLayer.rotation,
+        scale: originalLayer.scale,
+        flipX: originalLayer.flipX,
+        flipY: originalLayer.flipY,
+        meta: originalLayer.meta,
+        boxConstraints: originalLayer.boxConstraints,
+      )..groupId = originalLayer.groupId;
     }
 
     // Fallback for base Layer type
@@ -526,11 +596,11 @@ class LayerInteractionManager {
 
       Offset layerOffset = layer.offset;
 
-      Offset realTouchPosition =
-          (details.localFocalPoint - editorScaleOffset) / editorScaleFactor;
-
+      // localFocalPoint is already in editor-local coordinates.
+      // Re-applying zoom compensation here makes the interaction feel slow
+      // and can invert rotation direction at higher zoom levels.
       Offset touchPositionFromLayerCenter =
-          realTouchPosition - editorSize.center(Offset.zero) - layerOffset;
+          details.localFocalPoint - editorSize.center(Offset.zero) - layerOffset;
 
       if (layer.flipX) {
         touchPositionFromLayerCenter = Offset(
@@ -603,9 +673,11 @@ class LayerInteractionManager {
 
       Offset fractionalOffset = _getFractionalLayerOffset(layer);
 
+      // focalPointDelta is emitted in the gesture detector's local space.
+      // Dividing again by editor zoom causes sluggish movement while zoomed.
       layer.offset = Offset(
-        layer.offset.dx + detail.focalPointDelta.dx / editorScaleFactor,
-        layer.offset.dy + detail.focalPointDelta.dy / editorScaleFactor,
+        layer.offset.dx + detail.focalPointDelta.dx,
+        layer.offset.dy + detail.focalPointDelta.dy,
       );
 
       if (hasMultiSelection ||
