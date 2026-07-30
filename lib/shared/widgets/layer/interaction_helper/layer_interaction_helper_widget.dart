@@ -13,6 +13,7 @@ import '/core/models/layers/layer.dart';
 import '/features/paint_editor/enums/paint_editor_enum.dart';
 import '/plugins/defer_pointer/defer_pointer.dart';
 import '/shared/widgets/reactive_widgets/reactive_custom_widget.dart';
+import '../enums/layer_resize_handle.dart';
 import '../models/layer_item_interaction.dart';
 import 'layer_interaction_border_painter.dart';
 import 'layer_interaction_button.dart';
@@ -60,6 +61,8 @@ class LayerInteractionHelperWidget extends StatefulWidget
     this.onDuplicate,
     this.onScaleRotateDown,
     this.onScaleRotateUp,
+    this.onResizeDown,
+    this.onResizeUp,
     this.onGroupLayers,
     this.onUngroupLayers,
     this.selected = false,
@@ -117,6 +120,15 @@ class LayerInteractionHelperWidget extends StatefulWidget
   /// This callback is triggered when the user releases the button after scaling
   /// or rotating, finalizing the interaction.
   final Function(PointerUpEvent)? onScaleRotateUp;
+
+  /// Callback for handling pointer down events on a non-uniform resize handle.
+  ///
+  /// The handle identifies which edge was grabbed, which determines the axis
+  /// that gets stretched and the edge that stays anchored.
+  final Function(PointerDownEvent, LayerResizeHandle)? onResizeDown;
+
+  /// Callback for handling pointer up events on a non-uniform resize handle.
+  final Function(PointerUpEvent)? onResizeUp;
 
   /// Callback for grouping layers.
   ///
@@ -219,6 +231,8 @@ class _LayerInteractionHelperWidgetState
       remove: widget.onRemoveLayer ?? () {},
       scaleRotateDown: _handleScaleRotateDown,
       scaleRotateUp: _handleScaleRotateUp,
+      resizeDown: _handleResizeDown,
+      resizeUp: _handleResizeUp,
       group: widget.onGroupLayers ?? () {},
       ungroup: widget.onUngroupLayers ?? () {},
     );
@@ -230,6 +244,14 @@ class _LayerInteractionHelperWidgetState
 
   void _handleScaleRotateUp(PointerUpEvent event) {
     widget.onScaleRotateUp?.call(event);
+  }
+
+  void _handleResizeDown(PointerDownEvent event, LayerResizeHandle handle) {
+    widget.onResizeDown?.call(event, handle);
+  }
+
+  void _handleResizeUp(PointerUpEvent event) {
+    widget.onResizeUp?.call(event);
   }
 
   bool _isLayerEditable() {

@@ -8,6 +8,7 @@ import '/core/services/keyboard_service.dart';
 import '/core/services/mouse_service.dart';
 import '/shared/utils/unique_id_generator.dart';
 import '/shared/widgets/extended/mouse_region/extended_rebuild_mouse_region.dart';
+import '/shared/widgets/layer/enums/layer_resize_handle.dart';
 import '../controllers/main_editor_controllers.dart';
 import '../main_editor.dart';
 import 'layer_drag_selection_service.dart';
@@ -292,6 +293,37 @@ class MainEditorLayersService {
     layerInteraction
       ..rotateScaleLayerSizeHelper = null
       ..rotateScaleLayerScaleHelper = null;
+    _validateClearLayer();
+    onCheckInteractiveViewer();
+    callbacks.mainEditorCallbacks?.handleUpdateUI();
+  }
+
+  /// Called when a non-uniform edge-resize interaction starts.
+  ///
+  /// The content size is read from [Layer.keyInternalSize] rather than the
+  /// layer widget's own context, because the latter includes the selection
+  /// overlay padding while the resize math needs the bare content box.
+  void handleResizeDown(Layer layer, LayerResizeHandle handle) {
+    if (layer.lock || !layer.interaction.enableScale) return;
+
+    final renderObject = layer.keyInternalSize.currentContext
+        ?.findRenderObject();
+    if (renderObject is! RenderBox) return;
+
+    final size = renderObject.size;
+    if (size.isEmpty) return;
+
+    _isScaleInteractionActive = true;
+    layerInteraction
+      ..activeInteractionLayer = layer
+      ..beginResize(layer: layer, handle: handle, contentSize: size);
+    onCheckInteractiveViewer();
+  }
+
+  /// Called when a non-uniform edge-resize interaction ends.
+  void handleResizeUp() {
+    _isScaleInteractionActive = false;
+    layerInteraction.endResize();
     _validateClearLayer();
     onCheckInteractiveViewer();
     callbacks.mainEditorCallbacks?.handleUpdateUI();

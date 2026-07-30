@@ -16,6 +16,7 @@ import '/core/models/layers/quill_data_layer.dart';
 import '/core/models/layers/sticker_layer_data.dart';
 import '/shared/utils/debounce.dart';
 import '/shared/utils/unique_id_generator.dart';
+import '/shared/widgets/layer/enums/layer_resize_handle.dart';
 
 /// A helper class responsible for managing layer interactions in the editor.
 ///
@@ -316,6 +317,15 @@ class LayerInteractionManager {
 
   /// Creates a copy of a layer with all its properties.
   Layer _copyLayer(Layer originalLayer) {
+    // The per-type branches below enumerate the fields they copy, so base
+    // fields added later must be re-applied at the tail or they are silently
+    // dropped when grouping/ungrouping.
+    return _copyLayerTyped(originalLayer)
+      ..stretchX = originalLayer.stretchX
+      ..stretchY = originalLayer.stretchY;
+  }
+
+  Layer _copyLayerTyped(Layer originalLayer) {
     // Copy layer-specific properties based on layer type
     if (originalLayer is TextLayer) {
       return TextLayer(
@@ -483,6 +493,79 @@ class LayerInteractionManager {
   /// selection overlay.
   Layer? activeInteractionLayer;
 
+  /// The edge handle currently being dragged, or `null` when no non-uniform
+  /// resize is in progress.
+  LayerResizeHandle? activeResizeHandle;
+
+  /// The layer's content size at the moment the resize began.
+  Size? resizeStartContentSize;
+
+  /// The layer's centre offset at the moment the resize began.
+  Offset? resizeStartOffset;
+
+  /// The layer's horizontal stretch at the moment the resize began.
+  double resizeStartStretchX = 1;
+
+  /// The layer's vertical stretch at the moment the resize began.
+  double resizeStartStretchY = 1;
+
+  Offset? _resizeStartLocal;
+
+  /// Whether a non-uniform edge resize is currently in progress.
+  bool get isResizing => activeResizeHandle != null;
+
+  /// Captures the baseline a non-uniform resize is measured against.
+  ///
+  /// Every frame of the drag is computed absolutely from this baseline rather
+  /// than incrementally, so a long drag cannot accumulate drift.
+  void beginResize({
+    required Layer layer,
+    required LayerResizeHandle handle,
+    required Size contentSize,
+  }) {
+    activeResizeHandle = handle;
+    resizeStartContentSize = contentSize;
+    resizeStartOffset = layer.offset;
+    resizeStartStretchX = layer.stretchX == 0 ? 1 : layer.stretchX;
+    resizeStartStretchY = layer.stretchY == 0 ? 1 : layer.stretchY;
+    _resizeStartLocal = null;
+  }
+
+  /// Clears the non-uniform resize baseline.
+  void endResize() {
+    activeResizeHandle = null;
+    resizeStartContentSize = null;
+    resizeStartOffset = null;
+    resizeStartStretchX = 1;
+    resizeStartStretchY = 1;
+    _resizeStartLocal = null;
+  }
+
+  /// Returns the editor-space directions of a layer's local `+x` and `+y`
+  /// axes.
+  ///
+  /// `LayerWidget` renders a layer through `Rx(flipY ? pi : 0)`,
+  /// `Ry(flipX ? pi : 0)` and `Rz(rotation)`, whose 2D part reduces to
+  /// `diag(sx, sy) * Rz(rotation)`. That matrix is orthonormal, so mapping a
+  /// point from editor space into layer space is just a dot product against
+  /// each of these two axes.
+  @visibleForTesting
+  static ({Offset u, Offset v}) localAxes(
+    double rotation, {
+    required bool flipX,
+    required bool flipY,
+  }) {
+    final sx = flipX ? -1.0 : 1.0;
+    final sy = flipY ? -1.0 : 1.0;
+    final cosR = cos(rotation);
+    final sinR = sin(rotation);
+
+    return (
+      u: Offset(sx * cosR, sy * sinR),
+      v: Offset(-sx * sinR, sy * cosR),
+    );
+  }
+
   /// Last recorded X-axis position for layers.
   LayerLastPosition lastPositionX = LayerLastPosition.center;
 
@@ -512,6 +595,10 @@ class LayerInteractionManager {
   /// `true`.
   void reset() {
     _rotateScaleButtonStartPosition = null;
+    // Only the per-drag anchor is cleared here — the resize baseline itself
+    // must survive, because `reset()` runs inside `onScaleStart` which fires
+    // *after* `beginResize`.
+    _resizeStartLocal = null;
     _rotationStartedHelper = false;
     showHelperLines = true;
   }
@@ -641,6 +728,91 @@ class LayerInteractionManager {
           editorScaleFactor: editorScaleFactor,
         );
       }
+    }
+  }
+
+  /// Applies a non-uniform (single-axis) resize driven by an edge handle.
+  ///
+  /// The work is done in the layer's own local axes, so rotation and flipping
+  /// are handled analytically rather than by special-casing. The layer's
+  /// centre is then shifted so that the edge *opposite* the dragged handle
+  /// stays put in editor space — without that, the layer would grow
+  /// symmetrically and the handle would drift away from the pointer.
+  ///
+  /// Only the layer that owns the handle is affected; an edge handle never
+  /// resizes a whole multi-selection.
+  void calculateInteractiveResize({
+    required ProImageEditorConfigs configs,
+    required ScaleUpdateDetails details,
+    required List<Layer> selectedLayers,
+    required Size editorSize,
+  }) {
+    final handle = activeResizeHandle;
+    final startSize = resizeStartContentSize;
+    final startOffset = resizeStartOffset;
+    if (handle == null || startSize == null || startOffset == null) return;
+
+    final startExtent = handle.isHorizontal
+        ? startSize.width
+        : startSize.height;
+    if (startExtent <= 0) return;
+
+    for (final layer in selectedLayers) {
+      if (activeInteractionLayer?.id != layer.id) continue;
+      if (!layer.interaction.enableScale || layer.lock) continue;
+
+      layerWasTransformed = true;
+
+      final axes = localAxes(
+        layer.rotation,
+        flipX: layer.flipX,
+        flipY: layer.flipY,
+      );
+
+      // `localFocalPoint` is already in un-zoomed editor-body space, because
+      // the gesture detector lives inside the interactive viewer's subtree.
+      final pointer =
+          details.localFocalPoint -
+          editorSize.center(Offset.zero) -
+          startOffset;
+      final local = Offset(
+        pointer.dx * axes.u.dx + pointer.dy * axes.u.dy,
+        pointer.dx * axes.v.dx + pointer.dy * axes.v.dy,
+      );
+
+      _resizeStartLocal ??= local;
+      final travel = handle.isHorizontal
+          ? local.dx - _resizeStartLocal!.dx
+          : local.dy - _resizeStartLocal!.dy;
+
+      final interactionConfigs = configs.layerInteraction;
+      final targetExtent = max(
+        interactionConfigs.minResizeExtent,
+        startExtent + handle.sign * travel,
+      );
+
+      final startStretch = handle.isHorizontal
+          ? resizeStartStretchX
+          : resizeStartStretchY;
+      final stretch = (startStretch * (targetExtent / startExtent)).clamp(
+        interactionConfigs.minStretch,
+        interactionConfigs.maxStretch,
+      );
+
+      // Derive the extent that was *actually* applied from the clamped
+      // stretch, so the anchored edge stays exact even once a clamp bites.
+      final appliedExtent = startExtent * (stretch / startStretch);
+
+      if (handle.isHorizontal) {
+        layer.stretchX = stretch;
+      } else {
+        layer.stretchY = stretch;
+      }
+
+      final axisDirection = handle.isHorizontal ? axes.u : axes.v;
+      layer.offset =
+          startOffset +
+          axisDirection * (handle.sign * (appliedExtent - startExtent) / 2);
     }
   }
 
@@ -939,6 +1111,7 @@ class LayerInteractionManager {
     _baseAngleFactor.clear();
     _snapStartRotation.clear();
     _snapLastRotation.clear();
+    endResize();
 
     selectedLayersScaleStart.clear();
     enabledHitDetection = true;

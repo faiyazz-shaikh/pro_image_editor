@@ -1488,6 +1488,21 @@ class ProImageEditorState extends State<ProImageEditor>
 
     if (!hasSelectedLayers) return;
 
+    if (layerInteractionManager.isResizing) {
+      layerInteractionManager.calculateInteractiveResize(
+        configs: configs,
+        details: details,
+        selectedLayers: selectedLayers,
+        editorSize: sizesManager.bodySize,
+      );
+      for (Layer layer in selectedLayers) {
+        mainEditorCallbacks?.handleUpdateLayer(layer);
+        layer.key.currentState?.setState(() {});
+      }
+      checkUpdateHelperLineUI();
+      return;
+    }
+
     if (layerInteractionManager.rotateScaleLayerSizeHelper != null) {
       layerInteractionManager.calculateInteractiveButtonScaleRotate(
         configs: configs,
@@ -1559,7 +1574,9 @@ class ProImageEditorState extends State<ProImageEditor>
     if (selectedLayers.isNotEmpty) {
       mainEditorCallbacks?.handleLayerInteractionEnd(List.of(selectedLayers));
     }
-    layerInteractionManager.activeInteractionLayer = null;
+    layerInteractionManager
+      ..activeInteractionLayer = null
+      ..endResize();
 
     /// Check if layers should be removed.
     if (layerInteractionManager.hoverRemoveBtn) {
