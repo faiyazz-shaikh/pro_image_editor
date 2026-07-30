@@ -66,6 +66,8 @@ class Layer {
     bool? verticalMirror,
     double? transparency,
     bool? lock,
+    double? stretchX,
+    double? stretchY,
     this.hyperLink,
   }) : key = key ??= GlobalKey(),
        keyInternalSize = GlobalKey(),
@@ -76,6 +78,8 @@ class Layer {
     this.verticalMirror = verticalMirror ?? false;
     this.transparency = transparency ?? 1;
     this.lock = lock ?? false;
+    this.stretchX = stretchX ?? 1;
+    this.stretchY = stretchY ?? 1;
   }
 
   /// Factory constructor for creating a Layer instance from a map and a list
@@ -140,53 +144,67 @@ class Layer {
       exitCurve: parseCurve(map[keyConverter('exitCurve')] as String?),
       horizontalMirror: map['horizontalMirror'] ?? false,
       verticalMirror: map['verticalMirror'] ?? false,
-      transparency: map['transparency'] ?? 1,
+      // Parsed rather than cast: a JSON number that happens to be whole
+      // decodes as `int`, which an unchecked cast to `double?` would throw on.
+      transparency: safeParseDouble(map['transparency'], fallback: 1),
       lock: map['lock'] ?? false,
       hyperLink: map['hyperLink'],
+      stretchX: safeParseDouble(map[keyConverter('stretchX')], fallback: 1),
+      stretchY: safeParseDouble(map[keyConverter('stretchY')], fallback: 1),
     );
 
     /// Determines the layer type from the map and returns the appropriate
     /// LayerData subclass.
-    switch (map[keyConverter('type')]) {
-      case 'text':
-        // Returns a TextLayer instance when type is 'text'.
-        return TextLayer.fromMap(layer, map, keyConverter: keyConverter);
-      case 'emoji':
-        // Returns an EmojiLayer instance when type is 'emoji'.
-        return EmojiLayer.fromMap(layer, map, keyConverter: keyConverter);
-      case 'paint':
-      case 'painting':
-        // Returns a PaintLayer instance when type is 'paint'.
-        return PaintLayer.fromMap(layer, map, minifier: minifier);
-      case 'sticker':
-      case 'widget':
-        // Returns a WidgetLayer instance when type is 'widget' or 'sticker',
-        // utilizing the widgets layer list.
-        return WidgetLayer.fromMap(
-          layer: layer,
-          map: map,
-          widgetRecords: widgetRecords ?? [],
-          widgetLoader: widgetLoader,
-          requirePrecache: requirePrecache,
-          keyConverter: keyConverter,
-        );
+    Layer buildTyped() {
+      switch (map[keyConverter('type')]) {
+        case 'text':
+          // Returns a TextLayer instance when type is 'text'.
+          return TextLayer.fromMap(layer, map, keyConverter: keyConverter);
+        case 'emoji':
+          // Returns an EmojiLayer instance when type is 'emoji'.
+          return EmojiLayer.fromMap(layer, map, keyConverter: keyConverter);
+        case 'paint':
+        case 'painting':
+          // Returns a PaintLayer instance when type is 'paint'.
+          return PaintLayer.fromMap(layer, map, minifier: minifier);
+        case 'sticker':
+        case 'widget':
+          // Returns a WidgetLayer instance when type is 'widget' or 'sticker',
+          // utilizing the widgets layer list.
+          return WidgetLayer.fromMap(
+            layer: layer,
+            map: map,
+            widgetRecords: widgetRecords ?? [],
+            widgetLoader: widgetLoader,
+            requirePrecache: requirePrecache,
+            keyConverter: keyConverter,
+          );
 
-      case 'JDQuillDocument':
-        return QuillDataLayer.fromMap(layer, map);
+        case 'JDQuillDocument':
+          return QuillDataLayer.fromMap(layer, map);
 
-      case 'JDPaintingDocument':
-        return PaintingDataLayer.fromMap(layer, map);
+        case 'JDPaintingDocument':
+          return PaintingDataLayer.fromMap(layer, map);
 
-      case 'JDImage':
-        return JDImageLayerData.fromMap(layer, map);
+        case 'JDImage':
+          return JDImageLayerData.fromMap(layer, map);
 
-      case 'JDSticker':
-        return JDStickerLayerData.fromMap(layer, map);
+        case 'JDSticker':
+          return JDStickerLayerData.fromMap(layer, map);
 
-      default:
-        // Returns the base Layer instance when type is unrecognized.
-        return layer;
+        default:
+          // Returns the base Layer instance when type is unrecognized.
+          return layer;
+      }
     }
+
+    /// The subclass `fromMap` factories enumerate the base fields explicitly,
+    /// so any newly added base field has to be re-applied here instead of
+    /// being forwarded through all of them. Doing it once at the tail keeps
+    /// the subclasses from silently dropping it.
+    return buildTyped()
+      ..stretchX = layer.stretchX
+      ..stretchY = layer.stretchY;
   }
 
   /// Optional group identifier for grouping layers.
@@ -308,6 +326,35 @@ class Layer {
   ///
   String? hyperLink;
 
+  /// Per-axis aspect-distortion factor applied *on top of* [scale].
+  ///
+  /// The effective rendered size of a layer is
+  /// `intrinsicWidth * scale * stretchX` by
+  /// `intrinsicHeight * scale * stretchY`.
+  ///
+  /// Both default to `1`, which is the legacy uniform-scale behaviour, so
+  /// layers restored from data written before non-uniform resize existed keep
+  /// rendering exactly as before.
+  ///
+  /// These are expressed in the layer's own local axes, which makes them
+  /// invariant under rotation, flipping and uniform zoom — every existing
+  /// transform in the editor only multiplies [scale], so the aspect
+  /// distortion rides along untouched.
+  late double stretchX;
+
+  /// The vertical counterpart of [stretchX].
+  late double stretchY;
+
+  /// Whether this layer carries any non-uniform aspect distortion.
+  bool get hasStretch => stretchX != 1 || stretchY != 1;
+
+  /// Clears any non-uniform aspect distortion, restoring the layer to its
+  /// intrinsic proportions without touching [scale].
+  void resetStretch() {
+    stretchX = 1;
+    stretchY = 1;
+  }
+
 
   /// Converts this transform object to a Map.
   ///
@@ -323,6 +370,12 @@ class Layer {
       'y': offset.dy.roundSmart(maxDecimalPlaces),
       'rotation': rotation.roundSmart(maxDecimalPlaces),
       'scale': scale.roundSmart(maxDecimalPlaces),
+      // Emitted only when actually distorted, so layers that were never
+      // non-uniformly resized serialize byte-identically to how they did
+      // before this feature existed. Consumers that checksum the raw encoded
+      // content therefore see no churn.
+      if (stretchX != 1) 'stretchX': stretchX.roundSmart(maxDecimalPlaces),
+      if (stretchY != 1) 'stretchY': stretchY.roundSmart(maxDecimalPlaces),
       'flipX': flipX.minify(enableMinify),
       'flipY': flipY.minify(enableMinify),
       'interaction': interaction.toMap(enableMinify: enableMinify),
@@ -366,6 +419,10 @@ class Layer {
       if (layer.rotation != rotation)
         'rotation': rotation.roundSmart(maxDecimalPlaces),
       if (layer.scale != scale) 'scale': scale.roundSmart(maxDecimalPlaces),
+      if (layer.stretchX != stretchX)
+        'stretchX': stretchX.roundSmart(maxDecimalPlaces),
+      if (layer.stretchY != stretchY)
+        'stretchY': stretchY.roundSmart(maxDecimalPlaces),
       if (layer.flipX != flipX) 'flipX': flipX.minify(enableMinify),
       if (layer.flipY != flipY) 'flipY': flipY.minify(enableMinify),
       if (!mapIsEqual(layer.meta, meta)) 'meta': meta,
@@ -427,7 +484,10 @@ class Layer {
 
     final dpr =
         basePixelRatio ?? MediaQuery.maybeDevicePixelRatioOf(context) ?? 3.0;
-    final effectivePixelRatio = pixelRatio ?? (dpr * scale);
+    // Use the larger stretch axis so a non-uniformly enlarged layer is still
+    // captured at full resolution on its most magnified axis.
+    final effectivePixelRatio =
+        pixelRatio ?? (dpr * scale * math.max(stretchX, stretchY));
 
     final boundary = context.findRenderObject() as RenderRepaintBoundary;
     final rawImage = await boundary.toImage(pixelRatio: effectivePixelRatio);
@@ -678,6 +738,8 @@ class Layer {
         other.offset == offset &&
         other.rotation == rotation &&
         other.scale == scale &&
+        other.stretchX == stretchX &&
+        other.stretchY == stretchY &&
         other.flipX == flipX &&
         other.flipY == flipY &&
         other.interaction == interaction &&
@@ -699,6 +761,8 @@ class Layer {
         offset.hashCode ^
         rotation.hashCode ^
         scale.hashCode ^
+        stretchX.hashCode ^
+        stretchY.hashCode ^
         flipX.hashCode ^
         flipY.hashCode ^
         interaction.hashCode ^
@@ -741,6 +805,8 @@ class Layer {
       offset: offset ?? this.offset,
       rotation: rotation ?? this.rotation,
       scale: scale ?? this.scale,
+      stretchX: stretchX,
+      stretchY: stretchY,
       flipX: flipX ?? this.flipX,
       flipY: flipY ?? this.flipY,
       interaction: interaction ?? this.interaction,
@@ -764,6 +830,8 @@ class Layer {
       ..add(StringProperty('groupId', groupId))
       ..add(DoubleProperty('rotation', rotation))
       ..add(DoubleProperty('scale', scale))
+      ..add(DoubleProperty('stretchX', stretchX))
+      ..add(DoubleProperty('stretchY', stretchY))
       ..add(DiagnosticsProperty<bool>('flipX', flipX))
       ..add(DiagnosticsProperty<bool>('flipY', flipY))
       ..add(DiagnosticsProperty<Offset>('offset', offset))

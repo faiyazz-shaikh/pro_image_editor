@@ -1,5 +1,7 @@
 import 'package:flutter/gestures.dart';
 
+import '../enums/layer_resize_handle.dart';
+
 /// Class that holds interactions for a layer item.
 class LayerItemInteractions {
   /// Constructor for LayerItemInteractions.
@@ -11,6 +13,8 @@ class LayerItemInteractions {
     required this.duplicated,
     required this.scaleRotateDown,
     required this.scaleRotateUp,
+    required this.resizeDown,
+    required this.resizeUp,
     required this.group,
     required this.ungroup,
   });
@@ -35,6 +39,17 @@ class LayerItemInteractions {
   /// This function is required to finalize the scaling and rotation
   /// operations on the layer, applying the changes.
   final Function(PointerUpEvent event) scaleRotateUp;
+
+  /// Callback triggered when a non-uniform resize gesture starts from an edge
+  /// handle.
+  ///
+  /// Unlike [scaleRotateDown], this stretches only the axis belonging to
+  /// [handle] and leaves the other axis — and the layer's uniform scale —
+  /// untouched.
+  final Function(PointerDownEvent event, LayerResizeHandle handle) resizeDown;
+
+  /// Callback triggered when a non-uniform resize gesture ends.
+  final Function(PointerUpEvent event) resizeUp;
 
   /// Callback function for grouping layers.
   ///

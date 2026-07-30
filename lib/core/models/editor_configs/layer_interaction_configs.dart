@@ -25,6 +25,9 @@ class LayerInteractionConfigs {
     this.enableLayerDragSelection = true,
     this.enableMobilePinchScale = true,
     this.enableMobilePinchRotate = true,
+    this.minResizeExtent = 24.0,
+    this.minStretch = 0.05,
+    this.maxStretch = 20.0,
     this.mouseButtonPrimaryAction = MouseButtonAction.selectOrSpaceMove,
     this.mouseButtonSecondaryAction = MouseButtonAction.pan,
     this.mouseButtonMiddleAction = MouseButtonAction.pan,
@@ -54,6 +57,19 @@ class LayerInteractionConfigs {
   /// If set to `true`, users can scale the layer using a pinch gesture.
   /// If `false`, pinch scaling is disabled.
   final bool enableMobilePinchScale;
+
+  /// The smallest content extent, in logical pixels, that a non-uniform edge
+  /// resize may shrink a layer to.
+  ///
+  /// Stops a drag past the edge from collapsing a layer to zero, which would
+  /// leave nothing to grab and make the gesture unrecoverable.
+  final double minResizeExtent;
+
+  /// Lower bound for [Layer.stretchX] and [Layer.stretchY].
+  final double minStretch;
+
+  /// Upper bound for [Layer.stretchX] and [Layer.stretchY].
+  final double maxStretch;
 
   /// Determines whether pinch-to-rotate gestures are enabled for layers on
   /// mobile devices.
@@ -141,8 +157,14 @@ class LayerInteractionConfigs {
     MouseButtonAction? mouseButtonPrimaryAction,
     MouseButtonAction? mouseButtonSecondaryAction,
     MouseButtonAction? mouseButtonMiddleAction,
+    double? minResizeExtent,
+    double? minStretch,
+    double? maxStretch,
   }) {
     return LayerInteractionConfigs(
+      minResizeExtent: minResizeExtent ?? this.minResizeExtent,
+      minStretch: minStretch ?? this.minStretch,
+      maxStretch: maxStretch ?? this.maxStretch,
       selectable: selectable ?? this.selectable,
       initialSelected: initialSelected ?? this.initialSelected,
       hideToolbarOnInteraction:
