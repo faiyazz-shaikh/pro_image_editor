@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 
 import '../enums/layer_resize_handle.dart';
@@ -49,7 +50,10 @@ class LayerItemInteractions {
   final Function(PointerDownEvent event, LayerResizeHandle handle) resizeDown;
 
   /// Callback triggered when a non-uniform resize gesture ends.
-  final Function(PointerUpEvent event) resizeUp;
+  ///
+  /// Takes no event so a cancelled pointer can end the resize too — otherwise
+  /// a gesture the arena steals would leave the layer stuck mid-resize.
+  final VoidCallback resizeUp;
 
   /// Callback function for grouping layers.
   ///

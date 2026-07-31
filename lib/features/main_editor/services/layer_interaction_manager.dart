@@ -317,15 +317,6 @@ class LayerInteractionManager {
 
   /// Creates a copy of a layer with all its properties.
   Layer _copyLayer(Layer originalLayer) {
-    // The per-type branches below enumerate the fields they copy, so base
-    // fields added later must be re-applied at the tail or they are silently
-    // dropped when grouping/ungrouping.
-    return _copyLayerTyped(originalLayer)
-      ..stretchX = originalLayer.stretchX
-      ..stretchY = originalLayer.stretchY;
-  }
-
-  Layer _copyLayerTyped(Layer originalLayer) {
     // Copy layer-specific properties based on layer type
     if (originalLayer is TextLayer) {
       return TextLayer(
@@ -345,6 +336,8 @@ class LayerInteractionManager {
         offset: originalLayer.offset,
         rotation: originalLayer.rotation,
         scale: originalLayer.scale,
+        stretchX: originalLayer.stretchX,
+        stretchY: originalLayer.stretchY,
         flipX: originalLayer.flipX,
         flipY: originalLayer.flipY,
         meta: originalLayer.meta,
@@ -359,6 +352,8 @@ class LayerInteractionManager {
         offset: originalLayer.offset,
         rotation: originalLayer.rotation,
         scale: originalLayer.scale,
+        stretchX: originalLayer.stretchX,
+        stretchY: originalLayer.stretchY,
         flipX: originalLayer.flipX,
         flipY: originalLayer.flipY,
         meta: originalLayer.meta,
@@ -375,6 +370,8 @@ class LayerInteractionManager {
         offset: originalLayer.offset,
         rotation: originalLayer.rotation,
         scale: originalLayer.scale,
+        stretchX: originalLayer.stretchX,
+        stretchY: originalLayer.stretchY,
         flipX: originalLayer.flipX,
         flipY: originalLayer.flipY,
         meta: originalLayer.meta,
@@ -390,6 +387,8 @@ class LayerInteractionManager {
         offset: originalLayer.offset,
         rotation: originalLayer.rotation,
         scale: originalLayer.scale,
+        stretchX: originalLayer.stretchX,
+        stretchY: originalLayer.stretchY,
         flipX: originalLayer.flipX,
         flipY: originalLayer.flipY,
         meta: originalLayer.meta,
@@ -406,6 +405,8 @@ class LayerInteractionManager {
         offset: originalLayer.offset,
         rotation: originalLayer.rotation,
         scale: originalLayer.scale,
+        stretchX: originalLayer.stretchX,
+        stretchY: originalLayer.stretchY,
         flipX: originalLayer.flipX,
         flipY: originalLayer.flipY,
         meta: originalLayer.meta,
@@ -422,6 +423,8 @@ class LayerInteractionManager {
         offset: originalLayer.offset,
         rotation: originalLayer.rotation,
         scale: originalLayer.scale,
+        stretchX: originalLayer.stretchX,
+        stretchY: originalLayer.stretchY,
         flipX: originalLayer.flipX,
         flipY: originalLayer.flipY,
         meta: originalLayer.meta,
@@ -438,6 +441,8 @@ class LayerInteractionManager {
         offset: originalLayer.offset,
         rotation: originalLayer.rotation,
         scale: originalLayer.scale,
+        stretchX: originalLayer.stretchX,
+        stretchY: originalLayer.stretchY,
         flipX: originalLayer.flipX,
         flipY: originalLayer.flipY,
         meta: originalLayer.meta,
@@ -456,6 +461,8 @@ class LayerInteractionManager {
         offset: originalLayer.offset,
         rotation: originalLayer.rotation,
         scale: originalLayer.scale,
+        stretchX: originalLayer.stretchX,
+        stretchY: originalLayer.stretchY,
         flipX: originalLayer.flipX,
         flipY: originalLayer.flipY,
         meta: originalLayer.meta,
@@ -471,6 +478,8 @@ class LayerInteractionManager {
       offset: originalLayer.offset,
       rotation: originalLayer.rotation,
       scale: originalLayer.scale,
+      stretchX: originalLayer.stretchX,
+      stretchY: originalLayer.stretchY,
       flipX: originalLayer.flipX,
       flipY: originalLayer.flipY,
       meta: originalLayer.meta,

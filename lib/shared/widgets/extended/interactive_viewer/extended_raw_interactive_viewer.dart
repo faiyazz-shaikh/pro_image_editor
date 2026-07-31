@@ -8,6 +8,10 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/widgets.dart';
 import 'package:vector_math/vector_math_64.dart';
 
+import '/core/models/editor_configs/utils/zoom_bounce_configs.dart';
+import 'zoom_bounce_controller.dart';
+import 'zoom_bounce_target.dart';
+
 /// A thin wrapper on [ValueNotifier] whose value is a [Matrix4] representing a
 /// transformation.
 ///
@@ -134,6 +138,7 @@ class ExtendedRawInteractiveViewer extends StatefulWidget {
     this.enableExternalGestureDetector = false,
     this.trackpadScrollCausesScale = false,
     this.invertTrackpadDirection = false,
+    this.zoomBounce = const ZoomBounceConfigs(),
     required Widget this.child,
   }) : assert(minScale > 0),
        assert(interactionEndFrictionCoefficient > 0),
@@ -181,6 +186,7 @@ class ExtendedRawInteractiveViewer extends StatefulWidget {
     this.alignment,
     this.trackpadScrollCausesScale = true,
     this.invertTrackpadDirection = false,
+    this.zoomBounce = const ZoomBounceConfigs(),
     required InteractiveViewerWidgetBuilder this.builder,
   }) : assert(minScale > 0),
        assert(interactionEndFrictionCoefficient > 0),
@@ -332,6 +338,12 @@ class ExtendedRawInteractiveViewer extends StatefulWidget {
   ///
   /// Defaults to `false` (traditional scrolling behavior).
   final bool invertTrackpadDirection;
+
+  /// Elastic feedback shown when the user zooms past [minScale] or [maxScale].
+  ///
+  /// The overshoot is applied at paint time only; the transformation matrix
+  /// stays within the configured limits.
+  final ZoomBounceConfigs zoomBounce;
 
   /// Determines the amount of scale to be performed per pointer scroll.
   ///
@@ -607,6 +619,10 @@ class ExtendedRawInteractiveViewerState
   late Offset _scaleAnimationFocalPoint;
   late AnimationController _controller;
   late AnimationController _scaleController;
+
+  /// Drives the elastic overshoot at the scale limits. Null when disabled.
+  ZoomBounceController? _bounce;
+
   Axis? _currentAxis; // Used with panAxis.
   Offset? _referenceFocalPoint; // Point where the current gesture began.
   double? _scaleStart; // Scale value at start of scaling gesture.
@@ -765,6 +781,86 @@ class ExtendedRawInteractiveViewerState
     );
   }
 
+  /// Removes any elastic overshoot immediately, without animating.
+  ///
+  /// Call before setting the transform explicitly, so a running spring cannot
+  /// animate a stale overshoot over the new content.
+  void cancelZoomBounce() => _bounce?.cancel();
+
+  /// Where in the viewport a gesture is focused, as an [Alignment].
+  ///
+  /// Returned as a fraction rather than a pixel offset because the widget that
+  /// renders the overshoot is smaller than the viewport the gesture was
+  /// measured in.
+  ///
+  /// Reads from [_parentKey], which sits above any overshoot transform, so the
+  /// result can never feed back into itself.
+  Alignment _viewportAlignment(Offset globalPoint) {
+    final box = _parentKey.currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.hasSize || box.size.isEmpty) {
+      return Alignment.center;
+    }
+
+    final local = box.globalToLocal(globalPoint);
+    return Alignment(
+      (local.dx / box.size.width * 2 - 1).clamp(-1.0, 1.0),
+      (local.dy / box.size.height * 2 - 1).clamp(-1.0, 1.0),
+    );
+  }
+
+  /// Stops a pinch from accumulating more overshoot than the rubber band is
+  /// able to show.
+  ///
+  /// The band saturates: past roughly [kZoomBounceMaxSlackRatio] the content barely
+  /// stretches any further, but the gesture keeps recording how far the
+  /// fingers moved. All of that has to be un-pinched back through before the
+  /// zoom starts responding again, which reads as the gesture having stuck
+  /// and forces the user to lift and re-pinch.
+  ///
+  /// Moving the gesture's own origin pins the request at the saturation point,
+  /// so the return stroke takes effect immediately. Only reached while the
+  /// elastic feedback is enabled, so the plain clamped behaviour is unchanged.
+  void _limitOvershootSlack(
+    double desiredScale,
+    double clampedScale,
+    double gestureScale,
+  ) {
+    if (gestureScale.abs() < 1e-6 || clampedScale <= 0) return;
+
+    final limited = desiredScale.clamp(
+      clampedScale / kZoomBounceMaxSlackRatio,
+      clampedScale * kZoomBounceMaxSlackRatio,
+    );
+    if (limited != desiredScale) _scaleStart = limited / gestureScale;
+  }
+
+  /// Whether the bounce can safely measure the current limits.
+  ///
+  /// [_boundaryRect] asserts on a missing child context, which can happen
+  /// during teardown.
+  bool get _canDriveBounce =>
+      _bounce != null && _childKey.currentContext != null;
+
+  /// The smallest scale at which the child still fills the boundaries.
+  ///
+  /// With a zero boundary margin this is the *effective* minimum, which can be
+  /// higher than [ExtendedRawInteractiveViewer.minScale].
+  double get scaleFloor => math.max(
+    _viewport.width / _boundaryRect.width,
+    _viewport.height / _boundaryRect.height,
+  );
+
+  /// Applies the same scale limits the transformation matrix is subject to.
+  ///
+  /// Shared with the bounce so that the two agree on where the limits actually
+  /// are — a bounce using only [ExtendedRawInteractiveViewer.minScale] would
+  /// rubber-band while the matrix was not clamped at all.
+  double clampScale(double scale) => clampDouble(
+    math.max(scale, scaleFloor),
+    widget.minScale,
+    widget.maxScale,
+  );
+
   // Return a new matrix representing the given matrix after applying the given
   // scale.
   Matrix4 _matrixScale(Matrix4 matrix, double scale) {
@@ -776,20 +872,7 @@ class ExtendedRawInteractiveViewerState
     // Don't allow a scale that results in an overall scale beyond min/max
     // scale.
     final double currentScale = _transformer.value.getMaxScaleOnAxis();
-    final double totalScale = math.max(
-      currentScale * scale,
-      // Ensure that the scale cannot make the child so big that it can't fit
-      // inside the boundaries (in either direction).
-      math.max(
-        _viewport.width / _boundaryRect.width,
-        _viewport.height / _boundaryRect.height,
-      ),
-    );
-    final double clampedTotalScale = clampDouble(
-      totalScale,
-      widget.minScale,
-      widget.maxScale,
-    );
+    final double clampedTotalScale = clampScale(currentScale * scale);
     final double clampedScale = clampedTotalScale / currentScale;
     return matrix.clone()
       ..scaleByDouble(clampedScale, clampedScale, clampedScale, 1.0);
@@ -898,6 +981,22 @@ class ExtendedRawInteractiveViewerState
         final double desiredScale = _scaleStart! * details.scale;
         final double scaleChange = desiredScale / scale;
         _transformer.value = _matrixScale(_transformer.value, scaleChange);
+
+        // `desiredScale` is cumulative for the whole gesture, so it is the
+        // honest measure of how far past a limit the user has pushed. The
+        // matrix above has already been clamped; the difference is rendered
+        // as an elastic overshoot instead of being discarded.
+        if (_canDriveBounce) {
+          final double clampedScale = clampScale(desiredScale);
+          _bounce!.drive(
+            desiredScale: desiredScale,
+            clampedScale: clampedScale,
+            // Global, not local: the main editor's gesture detector sits under
+            // the transform, so its local focal point is in scene coordinates.
+            viewportAlignment: _viewportAlignment(details.focalPoint),
+          );
+          _limitOvershootSlack(desiredScale, clampedScale, details.scale);
+        }
 
         // While scaling, translate such that the user's two fingers stay on
         // the same places in the scene. That means that the focal point of
@@ -1018,6 +1117,14 @@ class ExtendedRawInteractiveViewerState
         _animation!.addListener(_handleInertiaAnimation);
         _controller.forward();
       case _GestureType.scale:
+        // Spring the overshoot back instead of running scale inertia. The two
+        // would fight, and the inertia target would be clamped away anyway
+        // since the user was pushing against a limit.
+        if (_bounce != null && _bounce!.isActive) {
+          _bounce!.settle();
+          _currentAxis = null;
+          return;
+        }
         if (details.scaleVelocity.abs() < 0.1) {
           _currentAxis = null;
           return;
@@ -1131,7 +1238,22 @@ class ExtendedRawInteractiveViewerState
     }
 
     final Offset focalPointScene = _transformer.toScene(local);
+    final double preScrollScale = _transformer.value.getMaxScaleOnAxis();
     _transformer.value = _matrixScale(_transformer.value, scaleChange);
+
+    // A scroll notch carries no cumulative scale, so the desired value has to
+    // be accumulated across the burst and settled on a debounce — otherwise a
+    // continuous scroll would bounce once per notch.
+    if (_canDriveBounce) {
+      _bounce!.driveWheel(
+        currentScale: preScrollScale,
+        scaleChange: scaleChange,
+        clampScale: clampScale,
+        // `local` is already relative to the parent listener, which sits
+        // above any overshoot transform.
+        viewportAlignment: _viewportAlignment(global),
+      );
+    }
 
     // After scaling, translate such that the event's position is at the
     // same scene point before and after the scale.
@@ -1279,6 +1401,9 @@ class ExtendedRawInteractiveViewerState
     super.initState();
     _controller = AnimationController(vsync: this);
     _scaleController = AnimationController(vsync: this);
+    if (widget.zoomBounce.enabled) {
+      _bounce = ZoomBounceController(vsync: this, configs: widget.zoomBounce);
+    }
 
     _transformer.addListener(_handleTransformation);
   }
@@ -1286,6 +1411,19 @@ class ExtendedRawInteractiveViewerState
   @override
   void didUpdateWidget(ExtendedRawInteractiveViewer oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (widget.zoomBounce != oldWidget.zoomBounce) {
+      if (!widget.zoomBounce.enabled) {
+        _bounce?.cancel();
+        _bounce?.dispose();
+        _bounce = null;
+      } else {
+        (_bounce ??= ZoomBounceController(
+          vsync: this,
+          configs: widget.zoomBounce,
+        )).configs = widget.zoomBounce;
+      }
+    }
 
     final ExtendedTransformationController? newController =
         widget.transformationController;
@@ -1304,6 +1442,7 @@ class ExtendedRawInteractiveViewerState
   void dispose() {
     _controller.dispose();
     _scaleController.dispose();
+    _bounce?.dispose();
     _transformer.removeListener(_handleTransformation);
     if (widget.transformationController == null) {
       _transformer.dispose();
@@ -1344,6 +1483,15 @@ class ExtendedRawInteractiveViewerState
           );
         },
       );
+    }
+
+    // Published so a [ZoomBounceTarget] below can nominate which part of the
+    // content stretches. Wraps the whole subtree — including the branch that
+    // returns early — so the effect keeps working while interaction is
+    // temporarily disabled and a spring is still settling.
+    final bounce = _bounce;
+    if (bounce != null) {
+      child = ZoomBounceScope(notifier: bounce, child: child);
     }
 
     if (!widget.panEnabled && !widget.scaleEnabled) {
@@ -1410,6 +1558,11 @@ class _InteractiveViewerBuilt extends StatelessWidget {
       );
     }
 
+    // The overshoot itself is applied by a [ZoomBounceTarget] somewhere below,
+    // not here: this child is typically a full-bleed background with the page
+    // centred inside it, and stretching all of it would make the surrounding
+    // editor chrome appear to breathe instead of the page. The ClipRect below
+    // still trims whatever the target paints.
     return ClipRect(clipBehavior: clipBehavior, child: child);
   }
 }

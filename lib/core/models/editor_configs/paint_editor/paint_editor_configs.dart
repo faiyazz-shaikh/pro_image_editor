@@ -39,6 +39,7 @@ class PaintEditorConfigs extends ZoomConfigs
     super.doubleTapZoomCurve,
     super.boundaryMargin,
     super.invertTrackpadDirection,
+    super.zoomBounce,
     this.layerFractionalOffset = const Offset(-0.5, -0.5),
     this.enableGesturePop = true,
     this.enableEdit = true,
@@ -319,6 +320,7 @@ class PaintEditorConfigs extends ZoomConfigs
     EdgeInsets? boundaryMargin,
     bool? enableDoubleTapZoom,
     bool? invertTrackpadDirection,
+    ZoomBounceConfigs? zoomBounce,
     double? doubleTapZoomFactor,
     Duration? doubleTapZoomDuration,
     Curve? doubleTapZoomCurve,
@@ -368,6 +370,7 @@ class PaintEditorConfigs extends ZoomConfigs
       enableDoubleTapZoom: enableDoubleTapZoom ?? this.enableDoubleTapZoom,
       invertTrackpadDirection:
           invertTrackpadDirection ?? this.invertTrackpadDirection,
+      zoomBounce: zoomBounce ?? this.zoomBounce,
       doubleTapZoomFactor: doubleTapZoomFactor ?? this.doubleTapZoomFactor,
       doubleTapZoomDuration:
           doubleTapZoomDuration ?? this.doubleTapZoomDuration,

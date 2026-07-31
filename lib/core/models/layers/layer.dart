@@ -155,56 +155,46 @@ class Layer {
 
     /// Determines the layer type from the map and returns the appropriate
     /// LayerData subclass.
-    Layer buildTyped() {
-      switch (map[keyConverter('type')]) {
-        case 'text':
-          // Returns a TextLayer instance when type is 'text'.
-          return TextLayer.fromMap(layer, map, keyConverter: keyConverter);
-        case 'emoji':
-          // Returns an EmojiLayer instance when type is 'emoji'.
-          return EmojiLayer.fromMap(layer, map, keyConverter: keyConverter);
-        case 'paint':
-        case 'painting':
-          // Returns a PaintLayer instance when type is 'paint'.
-          return PaintLayer.fromMap(layer, map, minifier: minifier);
-        case 'sticker':
-        case 'widget':
-          // Returns a WidgetLayer instance when type is 'widget' or 'sticker',
-          // utilizing the widgets layer list.
-          return WidgetLayer.fromMap(
-            layer: layer,
-            map: map,
-            widgetRecords: widgetRecords ?? [],
-            widgetLoader: widgetLoader,
-            requirePrecache: requirePrecache,
-            keyConverter: keyConverter,
-          );
+    switch (map[keyConverter('type')]) {
+      case 'text':
+        // Returns a TextLayer instance when type is 'text'.
+        return TextLayer.fromMap(layer, map, keyConverter: keyConverter);
+      case 'emoji':
+        // Returns an EmojiLayer instance when type is 'emoji'.
+        return EmojiLayer.fromMap(layer, map, keyConverter: keyConverter);
+      case 'paint':
+      case 'painting':
+        // Returns a PaintLayer instance when type is 'paint'.
+        return PaintLayer.fromMap(layer, map, minifier: minifier);
+      case 'sticker':
+      case 'widget':
+        // Returns a WidgetLayer instance when type is 'widget' or 'sticker',
+        // utilizing the widgets layer list.
+        return WidgetLayer.fromMap(
+          layer: layer,
+          map: map,
+          widgetRecords: widgetRecords ?? [],
+          widgetLoader: widgetLoader,
+          requirePrecache: requirePrecache,
+          keyConverter: keyConverter,
+        );
 
-        case 'JDQuillDocument':
-          return QuillDataLayer.fromMap(layer, map);
+      case 'JDQuillDocument':
+        return QuillDataLayer.fromMap(layer, map);
 
-        case 'JDPaintingDocument':
-          return PaintingDataLayer.fromMap(layer, map);
+      case 'JDPaintingDocument':
+        return PaintingDataLayer.fromMap(layer, map);
 
-        case 'JDImage':
-          return JDImageLayerData.fromMap(layer, map);
+      case 'JDImage':
+        return JDImageLayerData.fromMap(layer, map);
 
-        case 'JDSticker':
-          return JDStickerLayerData.fromMap(layer, map);
+      case 'JDSticker':
+        return JDStickerLayerData.fromMap(layer, map);
 
-        default:
-          // Returns the base Layer instance when type is unrecognized.
-          return layer;
-      }
+      default:
+        // Returns the base Layer instance when type is unrecognized.
+        return layer;
     }
-
-    /// The subclass `fromMap` factories enumerate the base fields explicitly,
-    /// so any newly added base field has to be re-applied here instead of
-    /// being forwarded through all of them. Doing it once at the tail keeps
-    /// the subclasses from silently dropping it.
-    return buildTyped()
-      ..stretchX = layer.stretchX
-      ..stretchY = layer.stretchY;
   }
 
   /// Optional group identifier for grouping layers.
@@ -355,7 +345,6 @@ class Layer {
     stretchY = 1;
   }
 
-
   /// Converts this transform object to a Map.
   ///
   /// Returns a Map representing the properties of this layer object,
@@ -449,8 +438,7 @@ class Layer {
         'horizontalMirror': horizontalMirror,
       if (layer.verticalMirror != verticalMirror)
         'verticalMirror': verticalMirror,
-      if (layer.transparency != transparency)
-        'transparency': transparency,
+      if (layer.transparency != transparency) 'transparency': transparency,
       if (layer.lock != lock) 'lock': lock,
       if (layer.hyperLink != hyperLink) 'hyperLink': hyperLink,
     };

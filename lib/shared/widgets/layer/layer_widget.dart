@@ -395,7 +395,7 @@ class _LayerWidgetState extends State<LayerWidget>
       onScaleRotateUp: (_) => _layersService?.handleScaleRotateUp(),
       onResizeDown: (_, handle) =>
           _layersService?.handleResizeDown(_layer, handle),
-      onResizeUp: (_) => _layersService?.handleResizeUp(),
+      onResizeUp: () => _layersService?.handleResizeUp(),
       onRemoveLayer: () => _layersService?.handleRemoveLayer(_layer),
       onDuplicate: widget.onDuplicate,
       onGroupLayers: _layersService?.handleGroupLayers,

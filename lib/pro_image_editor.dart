@@ -72,6 +72,8 @@ export '/shared/utils/parser/int_parser.dart';
 export '/shared/utils/parser/double_parser.dart';
 export '/shared/utils/parser/size_parser.dart';
 export '/core/models/editor_configs/utils/editor_safe_area.dart';
+export '/core/models/editor_configs/utils/zoom_bounce_configs.dart';
+export 'shared/widgets/extended/interactive_viewer/zoom_bounce_target.dart';
 
 /// Widgets
 export 'shared/widgets/animated/fade_in_up.dart';
