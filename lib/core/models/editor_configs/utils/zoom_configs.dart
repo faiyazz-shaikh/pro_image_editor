@@ -1,5 +1,9 @@
 import 'package:flutter/widgets.dart';
 
+import 'zoom_bounce_configs.dart';
+
+export 'zoom_bounce_configs.dart';
+
 /// Configuration interface for zoom behavior in an editor or viewer.
 ///
 /// Provides control over zoom enablement, scale limits, double-tap behavior,
@@ -16,6 +20,7 @@ abstract class ZoomConfigs {
     this.doubleTapZoomDuration = const Duration(milliseconds: 180),
     this.doubleTapZoomCurve = Curves.easeInOut,
     this.invertTrackpadDirection = false,
+    this.zoomBounce = const ZoomBounceConfigs(),
   });
 
   /// {@template enableZoom}
@@ -105,4 +110,10 @@ abstract class ZoomConfigs {
   ///
   /// Defaults to `false` (traditional scrolling behavior).
   final bool invertTrackpadDirection;
+
+  /// Elastic rubber-band feedback when zooming past [editorMinScale] or
+  /// [editorMaxScale].
+  ///
+  /// Disabled by default, in which case the zoom stops hard at the limits.
+  final ZoomBounceConfigs zoomBounce;
 }

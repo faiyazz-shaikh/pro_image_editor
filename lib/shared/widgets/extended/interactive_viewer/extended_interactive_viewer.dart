@@ -154,7 +154,18 @@ class ExtendedInteractiveViewerState extends State<ExtendedInteractiveViewer>
   Matrix4 get transformMatrix4 => _transformCtrl.value;
 
   /// Sets the transform matrix.
-  set transformMatrix4(Matrix4 value) => _transformCtrl.value = value;
+  set transformMatrix4(Matrix4 value) {
+    _cancelZoomBounce();
+    _transformCtrl.value = value;
+  }
+
+  /// Drops any elastic zoom overshoot immediately.
+  ///
+  /// Every path that sets the transform explicitly goes through here first,
+  /// so a running spring can never animate a stale overshoot over content
+  /// that has just been repositioned — including right before a snapshot is
+  /// captured.
+  void _cancelZoomBounce() => _rawViewerKey.currentState?.cancelZoomBounce();
 
   /// Sets the interaction state to the given value and updates the UI
   /// accordingly.
@@ -167,6 +178,7 @@ class ExtendedInteractiveViewerState extends State<ExtendedInteractiveViewer>
 
   /// Reset the transformations
   void reset() {
+    _cancelZoomBounce();
     _transformCtrl.value = Matrix4.identity();
   }
 
@@ -176,6 +188,7 @@ class ExtendedInteractiveViewerState extends State<ExtendedInteractiveViewer>
   /// used.
   /// This method bypasses animation and immediately updates the view.
   void zoomTo({Offset? offset, double? scale}) {
+    _cancelZoomBounce();
     final effectiveOffset = offset ?? Offset.zero;
     final effectiveScale = scale ?? 1.0;
 
@@ -195,6 +208,7 @@ class ExtendedInteractiveViewerState extends State<ExtendedInteractiveViewer>
     Curve curve = Curves.easeInOut,
   }) async {
     if (_animationCtrl.isAnimating) return;
+    _cancelZoomBounce();
     final effectiveOffset = offset ?? Offset.zero;
     final effectiveScale = scale ?? 1.0;
 
@@ -297,9 +311,16 @@ class ExtendedInteractiveViewerState extends State<ExtendedInteractiveViewer>
   Widget build(BuildContext context) {
     if (!widget.zoomConfigs.enableZoom) return widget.child;
 
+    final zoomBounce = widget.zoomConfigs.zoomBounce;
+
     return ExtendedRawInteractiveViewer(
       key: _rawViewerKey,
       boundaryMargin: widget.zoomConfigs.boundaryMargin,
+      // Respect the platform's reduce-motion setting: the bounce is decorative
+      // feedback, and the zoom itself works identically without it.
+      zoomBounce: MediaQuery.maybeDisableAnimationsOf(context) ?? false
+          ? zoomBounce.copyWith(enabled: false)
+          : zoomBounce,
       transformationController: _transformCtrl,
       panEnabled: _enableInteraction,
       scaleEnabled: _enableInteraction,

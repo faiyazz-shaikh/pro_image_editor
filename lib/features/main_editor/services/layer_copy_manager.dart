@@ -21,10 +21,6 @@ class LayerCopyManager {
   /// If the layer type is not recognized, it returns the original layer
   /// unchanged.
   Layer copyLayer(Layer layer) {
-    return _copyTyped(layer).withBaseTransformOf(layer);
-  }
-
-  Layer _copyTyped(Layer layer) {
     if (layer.isTextLayer) {
       return createCopyTextLayer(layer as TextLayer);
     } else if (layer.isEmojiLayer) {
@@ -55,20 +51,6 @@ class LayerCopyManager {
     Offset offset = const Offset(30, 30),
     bool enableCopyId = false,
     bool enableCopyKey = false,
-  }) {
-    return _duplicateTyped(
-      layer,
-      offset: offset,
-      enableCopyId: enableCopyId,
-      enableCopyKey: enableCopyKey,
-    ).withBaseTransformOf(layer);
-  }
-
-  Layer _duplicateTyped(
-    Layer layer, {
-    required Offset offset,
-    required bool enableCopyId,
-    required bool enableCopyKey,
   }) {
     if (layer.isTextLayer) {
       return createCopyTextLayer(
@@ -166,6 +148,8 @@ class LayerCopyManager {
       rotation: layer.rotation,
       textStyle: layer.textStyle,
       scale: layer.scale,
+      stretchX: layer.stretchX,
+      stretchY: layer.stretchY,
       flipX: layer.flipX,
       flipY: layer.flipY,
       meta: layer.meta,
@@ -198,6 +182,8 @@ class LayerCopyManager {
       offset: Offset(layer.offset.dx + offset.dx, layer.offset.dy + offset.dy),
       rotation: layer.rotation,
       scale: layer.scale,
+      stretchX: layer.stretchX,
+      stretchY: layer.stretchY,
       flipX: layer.flipX,
       flipY: layer.flipY,
       meta: layer.meta,
@@ -227,6 +213,8 @@ class LayerCopyManager {
       offset: Offset(layer.offset.dx + offset.dx, layer.offset.dy + offset.dy),
       rotation: layer.rotation,
       scale: layer.scale,
+      stretchX: layer.stretchX,
+      stretchY: layer.stretchY,
       flipX: layer.flipX,
       flipY: layer.flipY,
       meta: layer.meta,
@@ -257,6 +245,8 @@ class LayerCopyManager {
       offset: Offset(layer.offset.dx + offset.dx, layer.offset.dy + offset.dy),
       rotation: layer.rotation,
       scale: layer.scale,
+      stretchX: layer.stretchX,
+      stretchY: layer.stretchY,
       flipX: layer.flipX,
       flipY: layer.flipY,
       meta: layer.meta,
@@ -284,6 +274,8 @@ class LayerCopyManager {
       offset: Offset(layer.offset.dx, layer.offset.dy),
       rotation: layer.rotation,
       scale: layer.scale,
+      stretchX: layer.stretchX,
+      stretchY: layer.stretchY,
       flipX: layer.flipX,
       flipY: layer.flipY,
       horizontalMirror: layer.horizontalMirror,
@@ -316,6 +308,8 @@ class LayerCopyManager {
       offset: Offset(layer.offset.dx, layer.offset.dy),
       rotation: layer.rotation,
       scale: layer.scale,
+      stretchX: layer.stretchX,
+      stretchY: layer.stretchY,
       flipX: layer.flipX,
       flipY: layer.flipY,
       horizontalMirror: layer.horizontalMirror,
@@ -348,6 +342,8 @@ class LayerCopyManager {
       offset: Offset(layer.offset.dx, layer.offset.dy),
       rotation: layer.rotation,
       scale: layer.scale,
+      stretchX: layer.stretchX,
+      stretchY: layer.stretchY,
       flipX: layer.flipX,
       flipY: layer.flipY,
       horizontalMirror: layer.horizontalMirror,
@@ -382,6 +378,8 @@ class LayerCopyManager {
       offset: Offset(layer.offset.dx, layer.offset.dy),
       rotation: layer.rotation,
       scale: layer.scale,
+      stretchX: layer.stretchX,
+      stretchY: layer.stretchY,
       flipX: layer.flipX,
       flipY: layer.flipY,
       horizontalMirror: layer.horizontalMirror,
@@ -406,18 +404,3 @@ class LayerCopyManager {
   }
 }
 
-/// Carries base [Layer] fields that the per-type copy factories do not
-/// forward.
-///
-/// The `createCopy*` factories each enumerate the fields they copy, so a field
-/// added to the base class has to be re-applied afterwards or it is silently
-/// dropped. Because [LayerCopyManager.copyLayerList] runs on every history
-/// entry, dropping a field here would make undo/redo erase it.
-extension _LayerBaseTransfer on Layer {
-  Layer withBaseTransformOf(Layer source) {
-    if (identical(this, source)) return this;
-    return this
-      ..stretchX = source.stretchX
-      ..stretchY = source.stretchY;
-  }
-}

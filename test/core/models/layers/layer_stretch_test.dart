@@ -76,6 +76,38 @@ void main() {
     });
   });
 
+  group('Layer stretch — constructors', () {
+    // Every other base field can be passed straight to a subclass
+    // constructor; stretch has to behave the same way or callers are forced
+    // to construct and then mutate.
+    test('every subclass accepts it directly', () {
+      final layers = <Layer>[
+        Layer(stretchX: 2.5, stretchY: 0.4),
+        TextLayer(text: 'hello', stretchX: 2.5, stretchY: 0.4),
+        EmojiLayer(emoji: '🙂', stretchX: 2.5, stretchY: 0.4),
+        WidgetLayer(
+          widget: const SizedBox(),
+          stretchX: 2.5,
+          stretchY: 0.4,
+        ),
+        QuillDataLayer(document: '[]', stretchX: 2.5, stretchY: 0.4),
+        PaintingDataLayer(painting: 'a.png', stretchX: 2.5, stretchY: 0.4),
+        JDImageLayerData(image: 'a.png', stretchX: 2.5, stretchY: 0.4),
+        JDStickerLayerData(sticker: 'a.svg', stretchX: 2.5, stretchY: 0.4),
+      ];
+
+      for (final layer in layers) {
+        expect(layer.stretchX, 2.5, reason: '${layer.runtimeType}');
+        expect(layer.stretchY, 0.4, reason: '${layer.runtimeType}');
+      }
+    });
+
+    test('omitting it leaves the layer undistorted', () {
+      expect(TextLayer(text: 'hello').hasStretch, isFalse);
+      expect(QuillDataLayer(document: '[]').hasStretch, isFalse);
+    });
+  });
+
   group('Layer stretch — backward compatibility', () {
     // This is the contract that keeps already-saved documents rendering the
     // way they did before non-uniform resize existed.

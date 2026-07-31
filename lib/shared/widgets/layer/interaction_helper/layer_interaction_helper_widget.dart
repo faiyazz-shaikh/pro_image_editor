@@ -127,8 +127,8 @@ class LayerInteractionHelperWidget extends StatefulWidget
   /// that gets stretched and the edge that stays anchored.
   final Function(PointerDownEvent, LayerResizeHandle)? onResizeDown;
 
-  /// Callback for handling pointer up events on a non-uniform resize handle.
-  final Function(PointerUpEvent)? onResizeUp;
+  /// Callback for when a non-uniform resize handle is released or cancelled.
+  final VoidCallback? onResizeUp;
 
   /// Callback for grouping layers.
   ///
@@ -250,8 +250,8 @@ class _LayerInteractionHelperWidgetState
     widget.onResizeDown?.call(event, handle);
   }
 
-  void _handleResizeUp(PointerUpEvent event) {
-    widget.onResizeUp?.call(event);
+  void _handleResizeUp() {
+    widget.onResizeUp?.call();
   }
 
   bool _isLayerEditable() {
@@ -364,6 +364,11 @@ class _LayerInteractionHelperWidgetState
       child: Stack(
         fit: StackFit.passthrough,
         alignment: Alignment.center,
+        // Interaction widgets are decorations drawn around the layer's frame,
+        // and some of them straddle it rather than sitting inside — an edge
+        // handle centred on the border necessarily overhangs. Clipping would
+        // shave those off.
+        clipBehavior: Clip.none,
         children: [
           layerInteraction.widgets.border?.call(widget.child, _layer) ??
               Padding(
